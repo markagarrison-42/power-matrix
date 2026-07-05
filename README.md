@@ -1,17 +1,19 @@
 # Power Matrix
 
-A strength training progression tracker for Bench Press, Deadlift, and Back Squat based on the Power Matrix program. Built as a single-file HTML app with no dependencies, hosted on Netlify, and saved to iPhone home screen as a web app.
+A mobile-first strength training progression app for Bench Press, Deadlift, and Back Squat. Built as a single-file HTML app with no dependencies, hosted on Netlify, and saved to iPhone home screen as a web app.
+
+**Live app:** [powermatrix.mg42apps.com](https://powermatrix.mg42apps.com)
 
 ---
 
 ## What Is the Power Matrix
 
-The Power Matrix is a wave-loading strength program built around three compound lifts. Each "cell" in the matrix represents one week of training. Cells are organized by weight range and contain a fixed 7-set prescription that combines endurance, strength, and power work in a single session.
+The Power Matrix is a wave-loading strength program built around three compound lifts. Each "cell" represents one week of training with a fixed 7-set prescription combining endurance, strength, and power work.
 
 ### Rep Structure Per Cell
 
-| Set | Reps | Type |
-|-----|------|------|
+| Set | Reps | Purpose |
+|-----|------|---------|
 | 1 | 8 | Endurance |
 | 2 | 5 | Endurance |
 | 3 | 3 | Strength |
@@ -20,98 +22,68 @@ The Power Matrix is a wave-loading strength program built around three compound 
 | 6 | 1 | Power |
 | 7 | 5 | Backoff |
 
-Sets 1–2 build muscle endurance. Set 3 builds strength. Sets 4–6 are max effort singles at the cell's peak weight. Set 7 is a backoff flush at the same weight as Set 2.
-
 ### Progression Rules
 
-- Complete all 7 sets exactly as prescribed before advancing to the next cell
-- If you miss any set, repeat the same cell the following week
-- Never skip a cell — each one bridges to the next
-- Squat and Deadlift should never be trained on the same day
-- Each lift (Bench, Deadlift, Squat) tracks its own independent position in the matrix
+- Complete all 7 sets before advancing
+- If you miss any set, repeat the same cell
+- Each lift tracks its own independent position
+- Squat and Deadlift should never be on the same day
 
 ### Claimed Results
 
-Per the original program documentation, completing the full matrix adds approximately:
-- **+65 lbs** to Bench Press
-- **+110 lbs** to Squat
-- **+125 lbs** to Deadlift
+- **+65 lbs** Bench Press
+- **+110 lbs** Squat
+- **+125 lbs** Deadlift
 
 ---
 
-## The App
+## App Flow
 
-### Tabs
+### First Launch
+Enter your best recent single rep for each lift. The app finds your conservative starting cell at **80% of your max**. The matrix stays hidden — you only see your workout.
 
-**📋 This Week**
-Shows all three lifts side by side with weights pre-filled for your current cell. Each card is formatted for direct entry into Strong or any training log. Includes a Copy button per lift and a weekly notes field to log how each session felt.
+### Every Session
+Three lift tabs: Bench · Deadlift · Squat. Each shows 7 set cards with reps and total weight. Tap a set to check it off. Tap the per-side weight to see the plate breakdown.
 
-**🔢 Full Matrix**
-All 64 cells displayed in a 7-column grid with color-coded set types (endurance, strength, power, backoff). B / D / S badges mark each lift's current position. Click a cell to set your position; click it again to mark it complete and advance.
+### After All 7 Sets
+A **"How did that feel?"** prompt appears with three options:
+- ✅ **Good** — advance to next cell
+- 🔁 **Repeat** — same cell next week
+- 👇 **Too heavy** — drop back one cell
 
-**🎯 Find My Start**
-Enter your best recent single for each lift. The calculator finds your conservative starting cell at 80% of that number and shows a full preview of Week 1 sets. One tap sets all three lifts and drops you into This Week.
+### Every 4 Weeks
+A reassessment banner prompts you to update your 1-rep maxes and recalibrate.
 
-**📈 History**
-Shows your full progression log per lift — cells completed, percent through program, 1-rep weight gained since starting, and a reverse-chronological list of every completed cell. Also displays all saved weekly notes in one place. Export button downloads your complete progress as a plain text file.
+---
 
-### How to Use
+## Features
 
-1. Open the app and go to **🎯 Find My Start**
-2. Enter your best single for each lift
-3. Tap **Set These As My Starting Cells**
-4. You land on **This Week** — your Week 1 sets are ready
-5. Log the session in Strong using the pre-filled weights
-6. Add a note in the weekly notes field
-7. When the week is done, tap **Next Cell** per lift or **Advance All**
-8. Check **📈 History** any time to see progress and export a summary
+- **Set checkboxes** — tap to check off each set as you complete it
+- **Plate breakdown popup** — tap any per-side weight to see exactly what to load, with a visual bar diagram
+- **Per-lift 1RM reset** — reset and recalibrate any single lift without touching the others
+- **Jump to cell** — move to any cell in the matrix without clearing history
+- **Repeat cell** — stay on the same cell for another week with one tap
+- **LBS / KG toggle** — all weights convert instantly including cell identifiers
+- **Reassess prompt** — surfaces every 4 weeks to update maxes
+- **History tab** — completed cells, progress percentage, and 1-rep progression per lift
+- **Export** — downloads full progress as a plain text file
+- **Progress saved** in browser localStorage
 
-### Finding Your Starting Cell Manually
+---
 
-Find your current working max for each lift and locate the cell where the 1-rep weight sits at or just below 80% of that number. If you're new to the program, start conservatively — the matrix has 64 cells and plenty of runway.
+## Plate Math
+
+All weights are snapped to the nearest 5 lb increment (10 lb total — a pair of 5s) so every weight is loadable on a standard bar. Available plates: 45, 35, 25, 10, 5 lbs (or 20, 15, 10, 5, 2.5 kg). 2.5 lb plates are never required.
 
 ---
 
 ## Bug Fix — Missing Cell
 
-The original printed Power Matrix document skips directly from cell **680–685** to **700–705**, omitting **690–695**. This breaks the consistent 10 lb progression increment that every other row follows.
-
-The missing cell has been reconstructed by interpolating from the surrounding cells and inserted in its correct position. It is labeled **NEW** in the Full Matrix view.
-
----
-
-## Integration with Strong App
-
-The Power Matrix app does not connect directly to Strong. Use the **This Week** tab to see the exact sets and weights for each lift, then enter them manually into Strong before each session. The **Copy** button on each lift card copies the full set list as plain text for pasting into notes.
-
----
-
-## Implementation
-
-### Stack
-
-- Vanilla HTML, CSS, JavaScript — single file, zero dependencies
-- All state saved to browser `localStorage` (persists across sessions in the same browser)
-- Deployed on Netlify via drag-and-drop
-
-### Deployment
-
-Hosted on Netlify. To update, drag the new `power_matrix.html` file into the existing site dashboard. The URL stays the same.
-
-### iPhone Home Screen
-
-1. Open the Netlify URL in Safari
-2. Tap the Share button
-3. Tap **Add to Home Screen**
-4. Name it Power Matrix
-
-Opens full screen as a web app with no browser chrome.
+The original printed Power Matrix skips from **680–685** directly to **700–705**, omitting **690–695**. This cell has been reconstructed and inserted in its correct position.
 
 ---
 
 ## PPL Split Integration
-
-Designed for a Push / Pull / Legs training split:
 
 | Lift | Day |
 |------|-----|
@@ -119,7 +91,18 @@ Designed for a Push / Pull / Legs training split:
 | Deadlift | Pull Day |
 | Back Squat | Leg Day |
 
-The original program recommends training each lift twice per week. On a standard PPL running each lift once per week, progress is slower but still consistent. Never program Squat and Deadlift on the same day.
+Each lift tracks independently so they can progress at different rates.
+
+---
+
+## Deployment
+
+Hosted on Netlify. To update, drag `power_matrix.html` into the existing site in the Netlify dashboard. The URL stays the same.
+
+### iPhone Home Screen
+1. Open the app URL in Safari
+2. Tap Share → **Add to Home Screen**
+3. Name it Power Matrix
 
 ---
 
@@ -127,11 +110,11 @@ The original program recommends training each lift twice per week. On a standard
 
 | File | Description |
 |------|-------------|
-| `power_matrix.html` | The complete app — open in any browser |
+| `power_matrix.html` | Complete app — open in any browser |
 | `README.md` | This file |
 
 ---
 
-## Origin
+## Stack
 
-Based on a physical Power Matrix training document. Digitized, corrected (missing 690–695 cell added), and built into a mobile-first web app. Designed for iPhone home screen use alongside the Strong app for session logging.
+Vanilla HTML, CSS, JavaScript. Single file. Zero dependencies. No build step.
