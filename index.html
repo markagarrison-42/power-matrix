@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Power Matrix</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222;
+    --border: #2e2e2e;
+    --accent: #c8a96e;
+    --accent2: #8ab4d4;
+    --text: #f0f0f0;
+    --muted: #888;
+    --green: #4a9e6b;
+    --bench: #c8a96e;
+    --deadlift: #8ab4d4;
+    --squat: #c47a7a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ══════════════════
+     SETUP SCREEN
+  ══════════════════ */
+  .setup-screen {
+    padding: 48px 24px 40px;
+    justify-content: center;
+  }
+
+  .setup-logo {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .setup-logo h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .setup-logo p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  .setup-fields { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+
+  .setup-field {}
+
+  .setup-field label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .setup-field label span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .setup-field input {
+    width: 100%;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 1.6rem;
+    font-weight: 700;
+    -moz-appearance: textfield;
+    transition: border-color 0.15s;
+  }
+
+  .setup-field input::-webkit-outer-spin-button,
+  .setup-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .setup-field input:focus { outline: none; border-color: var(--accent); }
+  .setup-field input::placeholder { color: #333; }
+
+  .setup-unit-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .setup-unit-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+
+  .unit-btn {
+    padding: 8px 20px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .unit-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  .setup-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+
+  .setup-hint strong { color: var(--text); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    color: #000;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-primary:active { opacity: 0.8; }
+  .btn-primary:disabled { opacity: 0.3; }
+
+  /* ══════════════════
+     MAIN SCREEN
+  ══════════════════ */
+  .main-screen { padding-bottom: 80px; }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .top-bar-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .top-bar-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .icon-btn:active { background: var(--surface2); }
+
+  /* Lift tabs */
+  .lift-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 57px;
+    z-index: 99;
+  }
+
+  .lift-tab {
+    flex: 1;
+    padding: 14px 0;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .lift-tab.active-bench   { color: var(--bench);    border-bottom-color: var(--bench); }
+  .lift-tab.active-deadlift{ color: var(--deadlift); border-bottom-color: var(--deadlift); }
+  .lift-tab.active-squat   { color: var(--squat);    border-bottom-color: var(--squat); }
+
+  .lift-tab-check {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 0.6rem;
+    color: var(--green);
+  }
+
+  /* Week banner */
+  .week-banner {
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .week-banner-left {}
+
+  .week-num {
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .week-cell {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .week-progress {
+    text-align: right;
+  }
+
+  .week-progress-pct {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .week-progress-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    margin: 0 20px;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    transition: width 0.4s;
+  }
+
+  /* Sets list */
+  .sets-list {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .set-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+
+  .set-card.completed {
+    opacity: 0.45;
+    border-color: var(--green);
+  }
+
+  .set-card.completed .set-check { background: var(--green); border-color: var(--green); color: #fff; }
+
+  .set-check {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: transparent;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .set-info { flex: 1; }
+
+  .set-reps {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 2px;
+    letter-spacing: 0.04em;
+  }
+
+  .set-weight {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .set-weight-unit {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 3px;
+  }
+
+  .set-side {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .set-side-weight {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .set-side-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .set-plate-hint {
+    font-size: 0.62rem;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Section divider */
+  .sets-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 20px 0;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #333;
+  }
+
+  .sets-divider::before, .sets-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Advance button */
+  .advance-section {
+    padding: 8px 20px 20px;
+  }
+
+  .advance-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .advance-btn:active { background: var(--surface2); }
+  .advance-btn.ready { border-color: var(--green); color: var(--green); }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 200;
+  }
+
+  .nav-item {
+    flex: 1;
+    padding: 10px 0 8px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--muted);
+    transition: color 0.15s;
+  }
+
+  .nav-item.active { color: var(--accent); }
+
+  .nav-icon { font-size: 1.2rem; display: block; margin-bottom: 2px; }
+  .nav-label { font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* ══════════════════
+     HISTORY SCREEN
+  ══════════════════ */
+  .history-screen { padding-bottom: 80px; }
+
+  .screen-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-box {
+    background: var(--surface);
+    padding: 16px 12px;
+    text-align: center;
+  }
+
+  .stat-box-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .stat-box-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+  }
+
+  .stat-box-sub {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .history-lift-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .history-lift-tab {
+    flex: 1;
+    padding: 12px 0;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .history-lift-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .history-log { padding: 0 20px; }
+
+  .history-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid #1e1e1e;
+    font-size: 0.82rem;
+  }
+
+  .history-row:last-child { border-bottom: none; }
+
+  .history-row-left { display: flex; gap: 12px; align-items: center; }
+  .history-wk { font-size: 0.62rem; color: var(--muted); min-width: 36px; }
+  .history-cell { font-weight: 600; }
+  .history-1rep { color: var(--accent); font-weight: 700; }
+
+  .export-btn {
+    font-size: 0.7rem;
+    padding: 6px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.06em;
+  }
+
+  .export-btn:active { background: var(--border); }
+
+  /* ══════════════════
+     SETTINGS SCREEN
+  ══════════════════ */
+  .settings-screen { padding-bottom: 80px; }
+
+  .settings-section { padding: 20px; }
+
+  .settings-section-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .settings-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+  }
+
+  .settings-row-label { color: var(--text); }
+  .settings-row-value { color: var(--muted); font-size: 0.78rem; }
+
+  .settings-row.tappable { cursor: pointer; }
+  .settings-row.tappable:active { background: var(--surface2); }
+
+  .settings-1rm-fields { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+
+  .settings-1rm-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+
+  .settings-1rm-label {
+    font-size: 0.78rem;
+    color: var(--text);
+    min-width: 80px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .settings-1rm-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .settings-1rm-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: right;
+    -moz-appearance: textfield;
+  }
+
+  .settings-1rm-input::-webkit-outer-spin-button,
+  .settings-1rm-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .settings-1rm-input:focus { outline: none; }
+
+  .settings-save-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #000;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: opacity 0.15s;
+  }
+
+  .settings-save-btn:active { opacity: 0.8; }
+
+  .repeat-btn {
+    width: 100%;
+    padding: 13px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .repeat-btn:active { background: var(--surface2); }
+
+  /* ══════════════════
+     FEEDBACK PROMPT
+  ══════════════════ */
+  .feedback-prompt {
+    margin: 0 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    padding: 20px 16px;
+    animation: slideUp 0.2s ease;
+  }
+
+  .feedback-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 16px;
+    letter-spacing: 0.02em;
+  }
+
+  .feedback-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  .feedback-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 14px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .feedback-btn:active { transform: scale(0.96); }
+
+  .feedback-good:active   { border-color: var(--green); background: #1a2e1a; }
+  .feedback-repeat:active { border-color: var(--accent2); background: #1a2030; }
+  .feedback-heavy:active  { border-color: var(--squat); background: #2e1a1a; }
+
+  .feedback-icon  { font-size: 1.4rem; }
+  .feedback-label { font-size: 0.75rem; font-weight: 700; color: var(--text); }
+  .feedback-sub   { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.04em; }
+
+  .settings-section-desc {
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  .cell-picker-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cell-picker-label {
+    font-size: 0.78rem;
+    color: var(--text);
+    min-width: 80px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .cell-picker-select {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 8px 10px;
+    -webkit-appearance: none;
+  }
+
+  .cell-picker-select:focus { outline: none; border-color: var(--accent); }
+
+  .reset-lift-btn {
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #c47a7a;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .reset-lift-btn:active { background: #2e1a1a; border-color: #c47a7a; }
+
+  /* ══════════════════
+     REASSESS BANNER
+  ══════════════════ */
+  .reassess-banner {
+    margin: 12px 20px 0;
+    background: #2a1f0a;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .reassess-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
+  .reassess-text { flex: 1; }
+
+  .reassess-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 3px;
+  }
+
+  .reassess-desc {
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .reassess-btn {
+    margin-top: 8px;
+    padding: 6px 14px;
+    background: var(--accent);
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  /* ══════════════════
+     PLATE POPUP
+  ══════════════════ */
+  .popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: #00000088;
+    z-index: 500;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    animation: fadeIn 0.12s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .popup-sheet {
+    background: var(--surface);
+    border-radius: 16px 16px 0 0;
+    border-top: 1px solid var(--border);
+    width: 100%;
+    max-width: 480px;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    animation: slideUp 0.18s ease;
+  }
+
+  .popup-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  .popup-weight-display {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .popup-weight-num {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .popup-weight-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+  }
+
+  .popup-bar-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding: 4px 0;
+  }
+
+  .popup-bar-center {
+    height: 14px;
+    min-width: 50px;
+    background: #555;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.5rem;
+    color: #aaa;
+    flex-shrink: 0;
+  }
+
+  .popup-collar {
+    width: 8px;
+    height: 20px;
+    background: #777;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
+  .popup-plate-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 3px;
+    min-width: 18px;
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  .popup-chips {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .popup-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .popup-chip-val {
+    padding: 10px 16px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #fff;
+    border-radius: 8px;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .popup-chip-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* ══════════════════
+     NO POSITION STATE
+  ══════════════════ */
+  .empty-state {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 2;
+  }
+
+  .empty-state-icon { font-size: 2.5rem; display: block; margin-bottom: 16px; opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="setupScreen" class="screen setup-screen active">
+  <div class="setup-logo">
+    <h1>Power Matrix</h1>
+    <p>Enter your best recent single rep for each lift.<br>The app finds your starting point automatically.</p>
+  </div>
+
+  <div class="setup-unit-row">
+    <span class="setup-unit-label">Units</span>
+    <button class="unit-btn active" id="setupUnitLbs" onclick="setUnit('lbs')">LBS</button>
+    <button class="unit-btn" id="setupUnitKg" onclick="setUnit('kg')">KG</button>
+  </div>
+
+  <div class="setup-fields">
+    <div class="setup-field">
+      <label><span style="background:var(--bench)"></span> Bench Press</label>
+      <input type="number" id="setupBench" placeholder="225" min="45" max="900" oninput="checkSetup()" />
+    </div>
+    <div class="setup-field">
+      <label><span style="background:var(--deadlift)"></span> Deadlift</label>
+      <input type="number" id="setupDeadlift" placeholder="315" min="45" max="900" oninput="checkSetup()" />
+    </div>
+    <div class="setup-field">
+      <label><span style="background:var(--squat)"></span> Back Squat</label>
+      <input type="number" id="setupSquat" placeholder="275" min="45" max="900" oninput="checkSetup()" />
+    </div>
+  </div>
+
+  <p class="setup-hint">Your starting cell is set at <strong>80% of your max</strong> — conservative and buildable. You'll be prompted to reassess every 4 weeks.</p>
+
+  <button class="btn-primary" id="setupBtn" onclick="completeSetup()" disabled>Start Training</button>
+</div>
+
+<!-- ══ MAIN SCREEN ══ -->
+<div id="mainScreen" class="screen main-screen">
+  <div class="top-bar">
+    <div class="top-bar-title">Power Matrix</div>
+    <div class="top-bar-right">
+      <div class="icon-btn" id="unitToggle" onclick="toggleUnit()" title="Toggle units">LBS</div>
+    </div>
+  </div>
+
+  <div class="lift-tabs">
+    <div class="lift-tab" id="tabBench"    onclick="setLift('bench')">Bench<span class="lift-tab-check" id="checkBench"></span></div>
+    <div class="lift-tab" id="tabDeadlift" onclick="setLift('deadlift')">Deadlift<span class="lift-tab-check" id="checkDeadlift"></span></div>
+    <div class="lift-tab" id="tabSquat"    onclick="setLift('squat')">Squat<span class="lift-tab-check" id="checkSquat"></span></div>
+  </div>
+
+  <div id="reassessBanner" style="display:none">
+    <div class="reassess-banner">
+      <div class="reassess-icon">🔄</div>
+      <div class="reassess-text">
+        <div class="reassess-title">Time to Reassess</div>
+        <div class="reassess-desc">4 weeks have passed. Update your 1-rep maxes to recalibrate your starting point.</div>
+        <button class="reassess-btn" onclick="goToSettings()">Update Maxes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="week-banner">
+    <div class="week-banner-left">
+      <div class="week-num" id="weekNum">WEEK 1</div>
+      <div class="week-cell" id="weekCell">—</div>
+    </div>
+    <div class="week-progress">
+      <div class="week-progress-pct" id="weekPct">0%</div>
+      <div class="week-progress-label">Complete</div>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+
+  <div class="sets-list" id="setsList"></div>
+
+  <div class="advance-section" id="advanceSection">
+    <button class="advance-btn" id="advanceBtn" onclick="advanceLift()">Mark Week Complete →</button>
+    <button class="repeat-btn" id="repeatBtn" onclick="repeatWeek()">↺ Repeat This Cell</button>
+  </div>
+
+  <!-- Feedback prompt — shown after all sets checked off -->
+  <div class="feedback-prompt" id="feedbackPrompt" style="display:none">
+    <div class="feedback-title">How did that feel?</div>
+    <div class="feedback-buttons">
+      <button class="feedback-btn feedback-good" onclick="feedbackGood()">
+        <span class="feedback-icon">✅</span>
+        <span class="feedback-label">Good</span>
+        <span class="feedback-sub">Next cell</span>
+      </button>
+      <button class="feedback-btn feedback-repeat" onclick="feedbackRepeat()">
+        <span class="feedback-icon">🔁</span>
+        <span class="feedback-label">Repeat</span>
+        <span class="feedback-sub">Same cell</span>
+      </button>
+      <button class="feedback-btn feedback-heavy" onclick="feedbackHeavy()">
+        <span class="feedback-icon">👇</span>
+        <span class="feedback-label">Too heavy</span>
+        <span class="feedback-sub">Go back one</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HISTORY SCREEN ══ -->
+<div id="historyScreen" class="screen history-screen">
+  <div class="screen-header">
+    History
+    <button class="export-btn" onclick="exportProgress()">Export</button>
+  </div>
+
+  <div class="stat-grid" id="historyStats"></div>
+
+  <div class="history-lift-tabs">
+    <div class="history-lift-tab active" id="hTabBench"    onclick="setHistoryLift('bench')">Bench</div>
+    <div class="history-lift-tab"        id="hTabDeadlift" onclick="setHistoryLift('deadlift')">Deadlift</div>
+    <div class="history-lift-tab"        id="hTabSquat"    onclick="setHistoryLift('squat')">Squat</div>
+  </div>
+
+  <div class="history-log" id="historyLog"></div>
+</div>
+
+<!-- ══ SETTINGS SCREEN ══ -->
+<div id="settingsScreen" class="screen settings-screen">
+  <div class="screen-header">Settings</div>
+
+  <div class="settings-section">
+    <div class="settings-section-label">Units</div>
+    <div class="settings-row">
+      <span class="settings-row-label">Weight</span>
+      <div style="display:flex;gap:8px">
+        <button class="unit-btn active" id="settingsUnitLbs" onclick="setUnit('lbs')">LBS</button>
+        <button class="unit-btn" id="settingsUnitKg" onclick="setUnit('kg')">KG</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-label">1-Rep Maxes</div>
+    <div class="settings-1rm-fields">
+      <div class="settings-1rm-row">
+        <span class="settings-1rm-label"><span class="settings-1rm-dot" style="background:var(--bench)"></span>Bench</span>
+        <input type="number" class="settings-1rm-input" id="settings1rmBench" placeholder="—" min="45" max="900" />
+        <button class="reset-lift-btn" onclick="resetLiftMax('bench')">Reset</button>
+      </div>
+      <div class="settings-1rm-row">
+        <span class="settings-1rm-label"><span class="settings-1rm-dot" style="background:var(--deadlift)"></span>Deadlift</span>
+        <input type="number" class="settings-1rm-input" id="settings1rmDeadlift" placeholder="—" min="45" max="900" />
+        <button class="reset-lift-btn" onclick="resetLiftMax('deadlift')">Reset</button>
+      </div>
+      <div class="settings-1rm-row">
+        <span class="settings-1rm-label"><span class="settings-1rm-dot" style="background:var(--squat)"></span>Squat</span>
+        <input type="number" class="settings-1rm-input" id="settings1rmSquat" placeholder="—" min="45" max="900" />
+        <button class="reset-lift-btn" onclick="resetLiftMax('squat')">Reset</button>
+      </div>
+    </div>
+    <button class="settings-save-btn" onclick="saveSettings()">Save & Recalibrate</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-label">Jump to Cell</div>
+    <div class="settings-section-desc">Move to a specific cell without clearing history. Useful if you want to start higher or lower.</div>
+    <div id="cellPickerRows"></div>
+    <button class="settings-save-btn" onclick="saveCell()" style="margin-top:12px">Jump to Cell</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-label">Progress</div>
+    <div class="settings-row tappable" onclick="if(confirm('Reset all progress? This cannot be undone.')) resetAll()">
+      <span class="settings-row-label" style="color:#c47a7a">Reset All Progress</span>
+      <span class="settings-row-value">→</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<div class="bottom-nav" id="bottomNav" style="display:none">
+  <div class="nav-item active" id="navWorkout" onclick="showScreen('main')">
+    <span class="nav-icon">🏋️</span>
+    <span class="nav-label">Workout</span>
+  </div>
+  <div class="nav-item" id="navHistory" onclick="showScreen('history')">
+    <span class="nav-icon">📈</span>
+    <span class="nav-label">History</span>
+  </div>
+  <div class="nav-item" id="navSettings" onclick="showScreen('settings')">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">Settings</span>
+  </div>
+</div>
+
+<!-- ══ PLATE POPUP ══ -->
+<div id="platePopup" class="popup-overlay" style="display:none" onclick="if(event.target===this)closePlatePopup()">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-weight-display">
+      <div class="popup-weight-num" id="popupWeightNum"></div>
+      <div class="popup-weight-sub" id="popupWeightSub"></div>
+    </div>
+    <div class="popup-bar-diagram" id="popupDiagram"></div>
+    <div class="popup-chips" id="popupChips"></div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// MATRIX DATA
+// ─────────────────────────────────────────
+const MATRIX = [
+  ["100-105",70,80,85,90,80],["110-115",90,100,105,110,100],["120-125",95,100,110,115,100],
+  ["130-135",100,105,115,120,105],["140-145",105,110,120,130,110],["150-155",110,115,125,140,115],
+  ["160-165",110,120,130,150,120],["170-175",130,145,155,160,140],["180-185",130,150,160,170,145],
+  ["190-195",135,155,165,175,150],["200-205",140,160,170,180,155],["210-215",145,165,175,195,165],
+  ["220-225",150,170,180,210,170],["230-235",160,180,190,215,165],["240-245",165,190,200,225,145],
+  ["250-255",170,195,210,235,200],["260-265",175,205,215,255,200],["270-275",180,210,220,255,210],
+  ["280-285",165,215,225,260,215],["290-295",190,220,230,270,220],["300-305",200,230,240,280,225],
+  ["310-315",200,235,250,290,230],["320-325",210,245,265,295,230],["330-335",210,250,270,300,250],
+  ["340-345",215,255,275,310,255],["350-355",215,260,280,320,260],["360-365",220,265,285,330,270],
+  ["370-375",220,270,300,345,275],["380-385",225,275,315,360,275],["390-395",225,280,320,365,280],
+  ["400-405",230,285,325,370,280],["410-415",230,290,330,375,300],["420-425",235,295,340,385,310],
+  ["430-435",255,305,350,400,320],["440-445",260,315,360,415,325],["450-455",260,325,375,425,335],
+  ["460-465",265,335,390,435,350],["470-475",270,345,405,445,355],["480-485",275,355,420,455,360],
+  ["490-495",275,365,435,465,370],["500-505",280,375,445,470,375],["510-515",280,380,455,480,380],
+  ["520-525",295,385,465,490,385],["530-535",300,390,470,500,390],["540-545",310,400,475,510,400],
+  ["550-555",315,405,485,520,405],["560-565",320,410,490,525,410],["570-575",325,415,495,530,415],
+  ["580-585",330,420,500,540,425],["590-595",340,430,510,555,430],["600-605",345,435,515,565,435],
+  ["610-615",350,440,520,575,440],["620-625",355,445,525,585,445],["630-635",360,450,530,595,450],
+  ["640-645",365,455,535,600,460],["650-655",370,460,540,610,470],["660-665",385,480,550,625,480],
+  ["670-675",380,490,555,635,490],["680-685",395,500,560,645,500],
+  ["690-695",400,505,565,655,505],
+  ["700-705",400,505,565,665,500],["710-715",405,510,570,675,510],
+  ["720-725",410,515,580,685,515],["730-735",420,525,585,700,525],
+];
+
+const SET_DEFS = [
+  { reps: 8,  key: 1 },
+  { reps: 5,  key: 2 },
+  { reps: 3,  key: 3 },
+  { reps: 1,  key: 4 },
+  { reps: 1,  key: 4 },
+  { reps: 1,  key: 4 },
+  { reps: 5,  key: 5 },
+];
+
+const LIFT_META = {
+  bench:    { label: 'Bench Press', color: 'var(--bench)' },
+  deadlift: { label: 'Deadlift',    color: 'var(--deadlift)' },
+  squat:    { label: 'Back Squat',  color: 'var(--squat)' },
+};
+
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
+let STATE = {
+  setup: false,
+  unit: 'lbs',
+  setupDate: null,
+  bench:    { current: null, completed: [], setsDone: [], weekDone: false },
+  deadlift: { current: null, completed: [], setsDone: [], weekDone: false },
+  squat:    { current: null, completed: [], setsDone: [], weekDone: false },
+};
+
+let activeLift = 'bench';
+let activeHistoryLift = 'bench';
+let activeScreen = 'setup';
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem('pm_v4') || 'null');
+    if (s) STATE = s;
+    // Ensure arrays exist
+    ['bench','deadlift','squat'].forEach(l => {
+      STATE[l].completed = STATE[l].completed || [];
+      STATE[l].setsDone  = STATE[l].setsDone  || [];
+    });
+  } catch(e) {}
+}
+
+function saveState() {
+  try { localStorage.setItem('pm_v4', JSON.stringify(STATE)); } catch(e) {}
+}
+
+// ─────────────────────────────────────────
+// UNITS + PLATE MATH
+// ─────────────────────────────────────────
+const BAR_LBS = 45, BAR_KG = 20;
+const PLATES_LBS = [45, 35, 25, 10, 5];
+const PLATES_KG  = [20, 15, 10, 5, 2.5];
+
+function toDisplay(lbs) {
+  if (STATE.unit === 'kg') return Math.round(lbs * 0.453592 / 2.5) * 2.5;
+  return lbs;
+}
+
+function snapWeight(lbs) {
+  const bar = BAR_LBS;
+  if (lbs <= bar) return bar;
+  const perSide = (lbs - bar) / 2;
+  return bar + Math.round(perSide / 5) * 5 * 2;
+}
+
+function getPlates(lbs) {
+  const snapped = snapWeight(lbs);
+  if (STATE.unit === 'kg') {
+    const kg = toDisplay(snapped);
+    const perSide = (kg - BAR_KG) / 2;
+    if (perSide <= 0) return { display: kg, bar: BAR_KG, perSide: 0, plates: [] };
+    let rem = perSide, plates = [];
+    for (const p of PLATES_KG) {
+      while (rem >= p - 0.01) { plates.push(p); rem = Math.round((rem - p)*100)/100; }
+    }
+    return { display: kg, bar: BAR_KG, perSide, plates };
+  } else {
+    const perSide = (snapped - BAR_LBS) / 2;
+    if (perSide <= 0) return { display: snapped, bar: BAR_LBS, perSide: 0, plates: [] };
+    let rem = perSide, plates = [];
+    for (const p of PLATES_LBS) {
+      while (rem >= p - 0.01) { plates.push(p); rem = Math.round((rem - p)*100)/100; }
+    }
+    return { display: snapped, bar: BAR_LBS, perSide, plates };
+  }
+}
+
+function plateColor(p) {
+  if (p === 45 || p === 20) return '#c0392b';
+  if (p === 35 || p === 15) return '#d35400';
+  if (p === 25) return '#2471a3';
+  if (p === 10) return '#1e8449';
+  if (p === 5) return '#9a7d0a';
+  return '#707070';
+}
+
+function plateHeight(p) {
+  const h = {45:44,35:38,25:32,20:44,15:38,10:26,5:20,2.5:16};
+  return h[p] || 20;
+}
+
+function unitStr() { return STATE.unit.toUpperCase(); }
+
+// ─────────────────────────────────────────
+// SETUP
+// ─────────────────────────────────────────
+function setUnit(unit) {
+  STATE.unit = unit;
+  saveState();
+  ['Lbs','Kg'].forEach(u => {
+    ['setup','settings'].forEach(prefix => {
+      const el = document.getElementById(prefix + 'Unit' + u);
+      if (el) el.classList.toggle('active', u.toLowerCase() === unit);
+    });
+  });
+  document.getElementById('unitToggle').textContent = unit.toUpperCase();
+  if (STATE.setup) renderWorkout();
+}
+
+function checkSetup() {
+  const b = parseInt(document.getElementById('setupBench').value);
+  const d = parseInt(document.getElementById('setupDeadlift').value);
+  const s = parseInt(document.getElementById('setupSquat').value);
+  document.getElementById('setupBtn').disabled = !(b > 0 && d > 0 && s > 0);
+}
+
+function findCell(maxLbs) {
+  const target = Math.round(maxLbs * 0.80 / 5) * 5;
+  let best = 0;
+  for (let i = 0; i < MATRIX.length; i++) {
+    if (MATRIX[i][4] <= target) best = i;
+    else break;
+  }
+  return best;
+}
+
+function completeSetup() {
+  const unit = STATE.unit;
+  const toUse = (val) => unit === 'kg' ? val / 0.453592 : val;
+
+  const b = parseInt(document.getElementById('setupBench').value);
+  const d = parseInt(document.getElementById('setupDeadlift').value);
+  const s = parseInt(document.getElementById('setupSquat').value);
+
+  STATE.bench.current    = findCell(toUse(b));
+  STATE.deadlift.current = findCell(toUse(d));
+  STATE.squat.current    = findCell(toUse(s));
+  STATE.bench.setsDone    = [];
+  STATE.deadlift.setsDone = [];
+  STATE.squat.setsDone    = [];
+  STATE.setupDate = Date.now();
+  STATE.setup = true;
+  saveState();
+
+  document.getElementById('setupScreen').classList.remove('active');
+  document.getElementById('mainScreen').classList.add('active');
+  document.getElementById('bottomNav').style.display = 'flex';
+  activeLift = 'bench';
+  renderAll();
+}
+
+// ─────────────────────────────────────────
+// SCREEN ROUTING
+// ─────────────────────────────────────────
+function showScreen(name) {
+  activeScreen = name;
+  ['main','history','settings'].forEach(s => {
+    document.getElementById(s + 'Screen').classList.toggle('active', s === name);
+  });
+  ['Workout','History','Settings'].forEach(n => {
+    const id = 'nav' + n;
+    const map = { Workout: 'main', History: 'history', Settings: 'settings' };
+    document.getElementById(id).classList.toggle('active', map[n] === name);
+  });
+  if (name === 'history') renderHistory();
+  if (name === 'settings') populateSettings();
+}
+
+function goToSettings() { showScreen('settings'); }
+
+// ─────────────────────────────────────────
+// WORKOUT RENDER
+// ─────────────────────────────────────────
+function setLift(lift) {
+  activeLift = lift;
+  renderWorkout();
+}
+
+function renderAll() {
+  renderWorkout();
+  updateTabBadges();
+  checkReassess();
+}
+
+function renderWorkout() {
+  const ls = STATE[activeLift];
+  const meta = LIFT_META[activeLift];
+
+  // Tab highlighting
+  ['bench','deadlift','squat'].forEach(l => {
+    const tab = document.getElementById('tab' + l.charAt(0).toUpperCase() + l.slice(1));
+    tab.className = 'lift-tab';
+    if (l === activeLift) tab.classList.add('active-' + l);
+  });
+
+  document.getElementById('unitToggle').textContent = STATE.unit.toUpperCase();
+
+  if (ls.current === null) {
+    document.getElementById('setsList').innerHTML =
+      `<div class="empty-state"><span class="empty-state-icon">🎯</span>No position set for this lift.</div>`;
+    return;
+  }
+
+  const cell = MATRIX[ls.current];
+  const [label, r8, r5, r3, r1, back] = cell;
+  const pct = Math.round((ls.completed.length / MATRIX.length) * 100);
+
+  // Header
+  document.getElementById('weekNum').textContent = `WEEK ${ls.completed.length + 1}`;
+  document.getElementById('weekCell').textContent = label;
+  document.getElementById('weekPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressFill').style.background = meta.color;
+
+  // Sets
+  const weights = [r8, r5, r3, r1, r1, r1, back];
+  const reps    = [8,  5,  3,  1,  1,  1,  5 ];
+  const dividers = [false, false, true, false, false, false, true];
+
+  let html = '';
+  weights.forEach((wLbs, i) => {
+    const pd = getPlates(wLbs);
+    const done = ls.setsDone.includes(i);
+    if (dividers[i]) html += `<div class="sets-divider">power</div>`;
+    if (i === 6) html += `<div class="sets-divider">backoff</div>`;
+
+    const perSideStr = pd.perSide > 0
+      ? `${pd.perSide} ${unitStr()} each side`
+      : 'bar only';
+
+    html += `<div class="set-card ${done ? 'completed' : ''}" onclick="toggleSet(${i})">
+      <div class="set-check">${done ? '✓' : ''}</div>
+      <div class="set-info">
+        <div class="set-reps">${reps[i]} ${reps[i] === 1 ? 'rep' : 'reps'}</div>
+        <div class="set-weight">${pd.display}<span class="set-weight-unit">${unitStr()}</span></div>
+      </div>
+      <div class="set-side" onclick="event.stopPropagation();showPlatePopup(${wLbs})">
+        <div class="set-side-weight">${pd.perSide > 0 ? pd.perSide : '—'}</div>
+        <div class="set-side-label">${pd.perSide > 0 ? 'per side' : 'bar only'}</div>
+        <div class="set-plate-hint">tap for plates</div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('setsList').innerHTML = html;
+
+  // Show feedback prompt or advance button
+  const allDone = ls.setsDone.length === 7;
+  document.getElementById('advanceSection').style.display = allDone ? 'none' : 'block';
+  document.getElementById('feedbackPrompt').style.display = allDone ? 'block' : 'none';
+
+  const btn = document.getElementById('advanceBtn');
+  btn.className = 'advance-btn';
+  btn.textContent = 'Mark Week Complete →';
+}
+
+function toggleSet(idx) {
+  const ls = STATE[activeLift];
+  const i = ls.setsDone.indexOf(idx);
+  if (i >= 0) ls.setsDone.splice(i, 1);
+  else ls.setsDone.push(idx);
+  saveState();
+  renderWorkout();
+  updateTabBadges();
+}
+
+function advanceLift() {
+  const ls = STATE[activeLift];
+  if (ls.current === null || ls.current >= MATRIX.length - 1) return;
+  ls.completed.push(ls.current);
+  ls.current++;
+  ls.setsDone = [];
+  saveState();
+  renderWorkout();
+  updateTabBadges();
+}
+
+function updateTabBadges() {
+  ['bench','deadlift','squat'].forEach(l => {
+    const done = STATE[l].setsDone.length === 7;
+    document.getElementById('check' + l.charAt(0).toUpperCase() + l.slice(1)).textContent = done ? '✓' : '';
+  });
+}
+
+// ─────────────────────────────────────────
+// REASSESS
+// ─────────────────────────────────────────
+function checkReassess() {
+  if (!STATE.setupDate) return;
+  const weeks = Math.floor((Date.now() - STATE.setupDate) / (7 * 24 * 60 * 60 * 1000));
+  const show = weeks >= 4 && !STATE.reassessDismissed;
+  document.getElementById('reassessBanner').style.display = show ? 'block' : 'none';
+}
+
+// ─────────────────────────────────────────
+// PLATE POPUP
+// ─────────────────────────────────────────
+function showPlatePopup(lbs) {
+  const pd = getPlates(lbs);
+  document.getElementById('popupWeightNum').textContent = `${pd.display} ${unitStr()}`;
+  document.getElementById('popupWeightSub').textContent =
+    `Bar: ${pd.bar} ${unitStr()} · Each side: ${pd.perSide || 0} ${unitStr()}`;
+
+  // Diagram
+  let diag = '';
+  [...pd.plates].reverse().forEach(p => {
+    diag += `<div class="popup-plate-block" style="background:${plateColor(p)};height:${plateHeight(p)}px">${p}</div>`;
+  });
+  diag += `<div class="popup-collar"></div>`;
+  diag += `<div class="popup-bar-center">${pd.bar}</div>`;
+  diag += `<div class="popup-collar"></div>`;
+  pd.plates.forEach(p => {
+    diag += `<div class="popup-plate-block" style="background:${plateColor(p)};height:${plateHeight(p)}px">${p}</div>`;
+  });
+  document.getElementById('popupDiagram').innerHTML = diag;
+
+  // Chips
+  if (pd.plates.length === 0) {
+    document.getElementById('popupChips').innerHTML =
+      `<span style="color:var(--muted);font-size:0.82rem">Bar only</span>`;
+  } else {
+    const counts = {};
+    pd.plates.forEach(p => counts[p] = (counts[p]||0) + 1);
+    document.getElementById('popupChips').innerHTML = Object.entries(counts).map(([p,c]) =>
+      `<div class="popup-chip">
+        <div class="popup-chip-val" style="background:${plateColor(parseFloat(p))}">${c>1?`${c}×`:''}${p}</div>
+        <div class="popup-chip-label">${unitStr()} each</div>
+      </div>`
+    ).join('');
+  }
+
+  document.getElementById('platePopup').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePlatePopup() {
+  document.getElementById('platePopup').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// ─────────────────────────────────────────
+// HISTORY
+// ─────────────────────────────────────────
+function setHistoryLift(lift) {
+  activeHistoryLift = lift;
+  ['bench','deadlift','squat'].forEach(l => {
+    document.getElementById('hTab' + l.charAt(0).toUpperCase() + l.slice(1))
+      .classList.toggle('active', l === lift);
+  });
+  renderHistoryLog();
+}
+
+function renderHistory() {
+  // Stats grid
+  let statsHTML = '';
+  ['bench','deadlift','squat'].forEach(l => {
+    const ls = STATE[l];
+    const meta = LIFT_META[l];
+    const pct = ls.current !== null ? Math.round(ls.completed.length / MATRIX.length * 100) : 0;
+    statsHTML += `<div class="stat-box">
+      <div class="stat-box-label">${meta.label}</div>
+      <div class="stat-box-value" style="color:${meta.color}">${pct}%</div>
+      <div class="stat-box-sub">${ls.completed.length} / ${MATRIX.length} cells</div>
+    </div>`;
+  });
+  document.getElementById('historyStats').innerHTML = statsHTML;
+  renderHistoryLog();
+}
+
+function renderHistoryLog() {
+  const ls = STATE[activeHistoryLift];
+  const log = document.getElementById('historyLog');
+
+  if (ls.completed.length === 0) {
+    log.innerHTML = `<div class="empty-state" style="padding:32px 0">
+      <span class="empty-state-icon">📋</span>No completed cells yet.
+    </div>`;
+    return;
+  }
+
+  log.innerHTML = [...ls.completed].reverse().map((idx, i) => {
+    const cell = MATRIX[idx];
+    const wk = ls.completed.length - i;
+    return `<div class="history-row">
+      <div class="history-row-left">
+        <span class="history-wk">WK ${wk}</span>
+        <span class="history-cell">${cell[0]}</span>
+      </div>
+      <span class="history-1rep">${toDisplay(cell[4])} ${unitStr()} × 1</span>
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────
+// SETTINGS
+// ─────────────────────────────────────────
+function populateSettings() {
+  ['bench','deadlift','squat'].forEach(l => {
+    const ls = STATE[l];
+    const el = document.getElementById('settings1rm' + l.charAt(0).toUpperCase() + l.slice(1));
+    if (el && ls.current !== null) {
+      el.value = '';
+      el.placeholder = MATRIX[ls.current][4];
+    }
+  });
+  ['Lbs','Kg'].forEach(u => {
+    const el = document.getElementById('settingsUnit' + u);
+    if (el) el.classList.toggle('active', u.toLowerCase() === STATE.unit);
+  });
+  populateCellPicker();
+}
+
+function saveSettings() {
+  const toUse = (val) => STATE.unit === 'kg' ? val / 0.453592 : val;
+  ['bench','deadlift','squat'].forEach(l => {
+    const el = document.getElementById('settings1rm' + l.charAt(0).toUpperCase() + l.slice(1));
+    const val = parseInt(el.value);
+    if (val > 0) {
+      STATE[l].current = findCell(toUse(val));
+      STATE[l].setsDone = [];
+    }
+  });
+  STATE.setupDate = Date.now();
+  STATE.reassessDismissed = false;
+  saveState();
+  showScreen('main');
+  renderAll();
+}
+
+function feedbackGood() {
+  // Advance to next cell
+  advanceLift();
+}
+
+function feedbackRepeat() {
+  // Stay on same cell, reset checkboxes
+  STATE[activeLift].setsDone = [];
+  saveState();
+  renderWorkout();
+  updateTabBadges();
+}
+
+function feedbackHeavy() {
+  // Drop back one cell, keep history
+  const ls = STATE[activeLift];
+  if (ls.current !== null && ls.current > 0) {
+    ls.current--;
+    ls.setsDone = [];
+    saveState();
+    renderWorkout();
+    updateTabBadges();
+  }
+}
+
+function repeatWeek() {
+  if (!confirm('Repeat this cell next week? Sets will be reset but history is unchanged.')) return;
+  STATE[activeLift].setsDone = [];
+  saveState();
+  renderWorkout();
+}
+
+function resetLiftMax(lift) {
+  const meta = LIFT_META[lift];
+  if (!confirm(`Reset ${meta.label} 1RM? You'll enter a new max and the starting cell will be recalculated. History is kept.`)) return;
+  STATE[lift].current = null;
+  STATE[lift].setsDone = [];
+  saveState();
+  // Clear the input field
+  const el = document.getElementById('settings1rm' + lift.charAt(0).toUpperCase() + lift.slice(1));
+  if (el) { el.value = ''; el.placeholder = 'Enter new max'; el.focus(); }
+}
+
+function resetOnlyMaxes() {
+  if (!confirm('Clear 1-rep maxes and return to setup? Your history and cell positions are kept.')) return;
+  STATE.setup = false;
+  STATE.setupDate = null;
+  saveState();
+  document.getElementById('mainScreen').classList.remove('active');
+  document.getElementById('bottomNav').style.display = 'none';
+  document.getElementById('setupScreen').classList.add('active');
+  // Clear setup inputs
+  ['Bench','Deadlift','Squat'].forEach(l => {
+    document.getElementById('setup' + l).value = '';
+  });
+  document.getElementById('setupBtn').disabled = true;
+}
+
+function populateCellPicker() {
+  const container = document.getElementById('cellPickerRows');
+  const lifts = [
+    { key: 'bench',    label: 'Bench',    color: 'var(--bench)' },
+    { key: 'deadlift', label: 'Deadlift', color: 'var(--deadlift)' },
+    { key: 'squat',    label: 'Squat',    color: 'var(--squat)' },
+  ];
+
+  container.innerHTML = lifts.map(l => {
+    const cur = STATE[l.key].current;
+    const options = MATRIX.map((cell, i) =>
+      `<option value="${i}" ${i === cur ? 'selected' : ''}>${cell[0]}</option>`
+    ).join('');
+    return `<div class="cell-picker-row">
+      <span class="cell-picker-label">
+        <span style="width:8px;height:8px;border-radius:50%;background:${l.color};display:inline-block;flex-shrink:0"></span>
+        ${l.label}
+      </span>
+      <select class="cell-picker-select" id="cellPick_${l.key}">${options}</select>
+    </div>`;
+  }).join('');
+}
+
+function saveCell() {
+  ['bench','deadlift','squat'].forEach(l => {
+    const sel = document.getElementById('cellPick_' + l);
+    if (sel) {
+      STATE[l].current = parseInt(sel.value);
+      STATE[l].setsDone = [];
+    }
+  });
+  saveState();
+  showScreen('main');
+  renderAll();
+}
+
+function resetAll() {
+  localStorage.removeItem('pm_v4');
+  location.reload();
+}
+// ─────────────────────────────────────────
+function exportProgress() {
+  const now = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+  const lines = [`POWER MATRIX — PROGRESS EXPORT`, `Generated: ${now}`, `Units: ${unitStr()}`, ''];
+  ['bench','deadlift','squat'].forEach(l => {
+    const ls = STATE[l];
+    const meta = LIFT_META[l];
+    lines.push(`── ${meta.label.toUpperCase()} ──`);
+    if (ls.current === null) { lines.push('  Not started'); }
+    else {
+      const cur = MATRIX[ls.current];
+      lines.push(`  Current cell: ${cur[0]}`);
+      lines.push(`  1-rep target: ${toDisplay(cur[4])} ${unitStr()}`);
+      lines.push(`  Cells done:   ${ls.completed.length} / ${MATRIX.length}`);
+      if (ls.completed.length > 0) {
+        lines.push('  History:');
+        ls.completed.forEach((idx, i) =>
+          lines.push(`    Week ${i+1}: ${MATRIX[idx][0]} — ${toDisplay(MATRIX[idx][4])} ${unitStr()}`)
+        );
+      }
+    }
+    lines.push('');
+  });
+
+  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `power-matrix-${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+loadState();
+
+if (STATE.setup) {
+  document.getElementById('setupScreen').classList.remove('active');
+  document.getElementById('mainScreen').classList.add('active');
+  document.getElementById('bottomNav').style.display = 'flex';
+  renderAll();
+} else {
+  // Pre-set unit buttons on setup screen
+  setUnit(STATE.unit || 'lbs');
+}
+</script>
+</body>
+</html>
