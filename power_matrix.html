@@ -977,6 +977,64 @@
   }
 
   .empty-state-icon { font-size: 2.5rem; display: block; margin-bottom: 16px; opacity: 0.4; }
+
+  /* ══ MATRIX CELLS ══ */
+  .m-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 0.72rem;
+  }
+
+  .m-cell.cur-bench    { border-color: var(--bench);    background: #2a1f0a; }
+  .m-cell.cur-deadlift { border-color: var(--deadlift); background: #0a1a2a; }
+  .m-cell.cur-squat    { border-color: var(--squat);    background: #2a0a0a; }
+  .m-cell.done { opacity: 0.35; }
+
+  .m-cell-header {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .m-cell-badges { display: flex; gap: 3px; }
+
+  .m-badge {
+    font-size: 0.5rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 700;
+    color: #000;
+  }
+
+  .m-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+  }
+
+  .m-reps { color: var(--muted); font-size: 0.62rem; min-width: 22px; }
+
+  .m-weight {
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.1s;
+  }
+
+  .m-weight:active { background: #ffffff15; }
+  .m-div { border-top: 1px solid #222; margin: 3px 0; }</style>
 </style>
 </head>
 <body>
@@ -1082,6 +1140,21 @@
   </div>
 </div>
 
+<!-- ══ MATRIX SCREEN ══ -->
+<div id="matrixScreen" class="screen" style="padding-bottom:80px;overflow-x:auto">
+  <div class="screen-header">
+    Full Matrix
+    <div style="display:flex;gap:8px">
+      <button class="unit-btn" id="matrixUnitLbs" onclick="setUnit('lbs')" style="padding:4px 12px;font-size:0.65rem">LBS</button>
+      <button class="unit-btn" id="matrixUnitKg"  onclick="setUnit('kg')"  style="padding:4px 12px;font-size:0.65rem">KG</button>
+    </div>
+  </div>
+  <div style="padding:10px 16px;font-size:0.68rem;color:var(--muted);line-height:1.6;border-bottom:1px solid var(--border)">
+    Tap any weight to see the plate breakdown. Your current cell for each lift is highlighted.
+  </div>
+  <div id="matrixGrid" style="padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px"></div>
+</div>
+
 <!-- ══ HISTORY SCREEN ══ -->
 <div id="historyScreen" class="screen history-screen">
   <div class="screen-header">
@@ -1158,6 +1231,10 @@
   <div class="nav-item active" id="navWorkout" onclick="showScreen('main')">
     <span class="nav-icon">🏋️</span>
     <span class="nav-label">Workout</span>
+  </div>
+  <div class="nav-item" id="navMatrix" onclick="showScreen('matrix')">
+    <span class="nav-icon">🔢</span>
+    <span class="nav-label">Matrix</span>
   </div>
   <div class="nav-item" id="navHistory" onclick="showScreen('history')">
     <span class="nav-icon">📈</span>
@@ -1358,6 +1435,11 @@ function completeSetup() {
   const d = parseInt(document.getElementById('setupDeadlift').value);
   const s = parseInt(document.getElementById('setupSquat').value);
 
+  if (!STATE.maxes) STATE.maxes = {};
+  STATE.maxes.bench    = b;
+  STATE.maxes.deadlift = d;
+  STATE.maxes.squat    = s;
+
   STATE.bench.current    = findCell(toUse(b));
   STATE.deadlift.current = findCell(toUse(d));
   STATE.squat.current    = findCell(toUse(s));
@@ -1392,10 +1474,96 @@ function showScreen(name) {
   if (name === 'settings') populateSettings();
 }
 
+function showScreen(name) {
+  activeScreen = name;
+  ['main','matrix','history','settings'].forEach(s => {
+    document.getElementById(s + 'Screen').classList.toggle('active', s === name);
+  });
+  ['Workout','Matrix','History','Settings'].forEach(n => {
+    const el = document.getElementById('nav' + n);
+    if (el) {
+      const map = { Workout:'main', Matrix:'matrix', History:'history', Settings:'settings' };
+      el.classList.toggle('active', map[n] === name);
+    }
+  });
+  if (name === 'history') renderHistory();
+  if (name === 'settings') populateSettings();
+  if (name === 'matrix') renderMatrix();
+}
+
 function goToSettings() { showScreen('settings'); }
 
 // ─────────────────────────────────────────
-// WORKOUT RENDER
+// MATRIX VIEW
+// ─────────────────────────────────────────
+function renderMatrix() {
+  // Update unit buttons
+  ['Lbs','Kg'].forEach(u => {
+    const el = document.getElementById('matrixUnit' + u);
+    if (el) el.classList.toggle('active', u.toLowerCase() === STATE.unit);
+  });
+
+  const rowStarts = [100,170,240,310,380,450,520,590,660];
+  const grid = document.getElementById('matrixGrid');
+  let html = '';
+  let rowIdx = -1;
+
+  MATRIX.forEach((cell, idx) => {
+    const [label,r8,r5,r3,r1,back] = cell;
+    const base = parseInt(label);
+    const newRow = rowStarts.findIndex(rs => base >= rs && base < rs + 70);
+
+    if (newRow > rowIdx) {
+      rowIdx = newRow;
+      html += `<div style="grid-column:1/-1;font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;padding:6px 0 2px;border-bottom:1px solid var(--border);margin-bottom:2px">Row ${rowIdx+1}</div>`;
+    }
+
+    // Check which lifts are on this cell
+    const badges = ['bench','deadlift','squat'].filter(l => STATE[l].current === idx);
+    const isCompleted = ['bench','deadlift','squat'].every(l => STATE[l].completed.includes(idx));
+
+    let cls = 'm-cell';
+    if (badges.includes('bench'))    cls += ' cur-bench';
+    else if (badges.includes('deadlift')) cls += ' cur-deadlift';
+    else if (badges.includes('squat'))    cls += ' cur-squat';
+    if (isCompleted) cls += ' done';
+
+    const badgeColors = { bench: 'var(--bench)', deadlift: 'var(--deadlift)', squat: 'var(--squat)' };
+    const badgeLabels = { bench: 'B', deadlift: 'D', squat: 'S' };
+    const badgeHTML = badges.map(l =>
+      `<span class="m-badge" style="background:${badgeColors[l]}">${badgeLabels[l]}</span>`
+    ).join('');
+
+    const cellLabel = STATE.unit === 'kg'
+      ? `${toDisplay(parseInt(label))}–${toDisplay(parseInt(label.split('-')[1]))}`
+      : label;
+
+    const weights = [r8, r5, r3, r1, back];
+    const reps    = [8,  5,  3,  1,  5 ];
+    const colors  = ['#6db88a','#6db88a','#d48080','var(--accent)','var(--accent2)'];
+    const divs    = [false, false, true, false, true];
+
+    let rows = '';
+    weights.forEach((w, i) => {
+      const pd = getPlates(w);
+      if (divs[i]) rows += `<div class="m-div"></div>`;
+      rows += `<div class="m-row">
+        <span class="m-reps">${reps[i]}×</span>
+        <span class="m-weight" style="color:${colors[i]}" onclick="event.stopPropagation();showPlatePopup(${w})">${pd.display}</span>
+      </div>`;
+    });
+
+    html += `<div class="${cls}">
+      <div class="m-cell-header">
+        <span>${cellLabel}</span>
+        <div class="m-cell-badges">${badgeHTML}</div>
+      </div>
+      ${rows}
+    </div>`;
+  });
+
+  grid.innerHTML = html;
+}
 // ─────────────────────────────────────────
 function setLift(lift) {
   activeLift = lift;
@@ -1621,12 +1789,13 @@ function renderHistoryLog() {
 // SETTINGS
 // ─────────────────────────────────────────
 function populateSettings() {
+  if (!STATE.maxes) STATE.maxes = {};
   ['bench','deadlift','squat'].forEach(l => {
-    const ls = STATE[l];
     const el = document.getElementById('settings1rm' + l.charAt(0).toUpperCase() + l.slice(1));
-    if (el && ls.current !== null) {
-      el.value = '';
-      el.placeholder = MATRIX[ls.current][4];
+    if (el) {
+      const saved = STATE.maxes[l];
+      el.value = saved ? saved : '';
+      el.placeholder = saved ? saved : '—';
     }
   });
   ['Lbs','Kg'].forEach(u => {
@@ -1638,10 +1807,12 @@ function populateSettings() {
 
 function saveSettings() {
   const toUse = (val) => STATE.unit === 'kg' ? val / 0.453592 : val;
+  if (!STATE.maxes) STATE.maxes = {};
   ['bench','deadlift','squat'].forEach(l => {
     const el = document.getElementById('settings1rm' + l.charAt(0).toUpperCase() + l.slice(1));
     const val = parseInt(el.value);
     if (val > 0) {
+      STATE.maxes[l] = val; // store in display unit
       STATE[l].current = findCell(toUse(val));
       STATE[l].setsDone = [];
     }
