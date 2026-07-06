@@ -1112,10 +1112,7 @@
 
   <div class="sets-list" id="setsList"></div>
 
-  <div class="advance-section" id="advanceSection">
-    <button class="advance-btn" id="advanceBtn" onclick="advanceLift()">Mark Week Complete →</button>
-    <button class="repeat-btn" id="repeatBtn" onclick="repeatWeek()">↺ Repeat This Cell</button>
-  </div>
+  <div id="advanceSection" style="display:none"></div>
 
   <!-- Feedback prompt — shown after all sets checked off -->
   <div class="feedback-prompt" id="feedbackPrompt" style="display:none">
@@ -1638,14 +1635,10 @@ function renderWorkout() {
 
   document.getElementById('setsList').innerHTML = html;
 
-  // Show feedback prompt or advance button
+  // Show feedback prompt when all sets done
   const allDone = ls.setsDone.length === 7;
-  document.getElementById('advanceSection').style.display = allDone ? 'none' : 'block';
+  document.getElementById('advanceSection').style.display = 'none';
   document.getElementById('feedbackPrompt').style.display = allDone ? 'block' : 'none';
-
-  const btn = document.getElementById('advanceBtn');
-  btn.className = 'advance-btn';
-  btn.textContent = 'Mark Week Complete →';
 }
 
 function toggleSet(idx) {
