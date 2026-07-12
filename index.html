@@ -63,8 +63,17 @@
   .btn-primary:active { opacity: 0.8; }
   .btn-primary:disabled { opacity: 0.4; }
 
-  .auth-switch { text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--muted); }
-  .auth-switch span { color: var(--accent); cursor: pointer; }
+  .auth-note {
+    margin-top: 16px;
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
 
   /* ── SETUP SCREEN ── */
   .setup-screen { padding: 48px 24px 40px; justify-content: center; }
@@ -250,6 +259,7 @@
   <div class="auth-error" id="authError"></div>
   <button class="btn-primary" id="authBtn" onclick="handleAuth()">Sign In</button>
   <div class="auth-switch" id="authSwitch">No account? <span onclick="switchAuthTab('signup')">Sign up free</span></div>
+  <div class="auth-note" id="authNote">Your account works across all mg42apps — one login for Power Matrix, FitLog, and more.</div>
 </div>
 
 <!-- ── SETUP SCREEN ── -->
@@ -586,8 +596,16 @@ async function saveToSupabase() {
     updated_at:          new Date().toISOString(),
   };
 
-  await sb.from('pm_progress').upsert(payload, { onConflict: 'user_id' });
-  hideSaving();
+  const { error } = await sb.from('pm_progress').upsert(payload, { onConflict: 'user_id' });
+  if (error) {
+    console.error('Save error:', error);
+    const el = document.getElementById('savingIndicator');
+    el.textContent = '⚠ Save failed';
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+  } else {
+    hideSaving();
+  }
 }
 
 function scheduleSave() {
