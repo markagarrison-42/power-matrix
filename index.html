@@ -536,7 +536,7 @@ async function loadFromSupabase() {
   if (!currentUser) return;
 
   const { data, error } = await sb
-    .from('progress')
+    .from('pm_progress')
     .select('*')
     .eq('user_id', currentUser.id)
     .single();
@@ -586,7 +586,7 @@ async function saveToSupabase() {
     updated_at:          new Date().toISOString(),
   };
 
-  await sb.from('progress').upsert(payload, { onConflict: 'user_id' });
+  await sb.from('pm_progress').upsert(payload, { onConflict: 'user_id' });
   hideSaving();
 }
 
