@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Power Matrix</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #0f0f0f;
@@ -29,1116 +30,304 @@
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
-    min-height: -webkit-fill-available;
     max-width: 480px;
     margin: 0 auto;
-    position: relative;
     overflow-x: hidden;
   }
 
-  /* ── SCREENS ── */
   .screen { display: none; min-height: 100vh; flex-direction: column; }
   .screen.active { display: flex; }
 
-  /* ══════════════════
-     SETUP SCREEN
-  ══════════════════ */
-  .setup-screen {
-    padding: 48px 24px 40px;
+  /* ── AUTH SCREEN ── */
+  .auth-screen {
+    padding: 60px 24px 40px;
     justify-content: center;
   }
 
-  .setup-logo {
-    text-align: center;
-    margin-bottom: 40px;
-  }
+  .auth-logo { text-align: center; margin-bottom: 40px; }
+  .auth-logo h1 { font-size: 2rem; font-weight: 800; letter-spacing: 0.08em; color: var(--accent); text-transform: uppercase; }
+  .auth-logo p { font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
 
-  .setup-logo h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
+  .auth-tabs { display: flex; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .auth-tab { flex: 1; padding: 10px 0; text-align: center; font-size: 0.78rem; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; letter-spacing: 0.06em; text-transform: uppercase; }
+  .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-  .setup-logo p {
-    font-size: 0.82rem;
-    color: var(--muted);
-    margin-top: 6px;
-    line-height: 1.6;
-  }
+  .auth-field { margin-bottom: 14px; }
+  .auth-field label { display: block; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .auth-field input { width: 100%; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; }
+  .auth-field input:focus { outline: none; border-color: var(--accent); }
 
-  .setup-fields { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+  .auth-error { font-size: 0.72rem; color: #c47a7a; margin-bottom: 12px; min-height: 18px; }
 
-  .setup-field {}
+  .btn-primary { width: 100%; padding: 16px; background: var(--accent); color: #000; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border: none; border-radius: 10px; cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:active { opacity: 0.8; }
+  .btn-primary:disabled { opacity: 0.4; }
 
-  .setup-field label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
+  .auth-switch { text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--muted); }
+  .auth-switch span { color: var(--accent); cursor: pointer; }
 
-  .setup-field label span {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
+  /* ── SETUP SCREEN ── */
+  .setup-screen { padding: 48px 24px 40px; justify-content: center; }
+  .setup-logo { text-align: center; margin-bottom: 32px; }
+  .setup-logo h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: 0.08em; color: var(--accent); text-transform: uppercase; }
+  .setup-logo p { font-size: 0.8rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
 
-  .setup-field input {
-    width: 100%;
-    padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 1.6rem;
-    font-weight: 700;
-    -moz-appearance: textfield;
-    transition: border-color 0.15s;
-  }
-
-  .setup-field input::-webkit-outer-spin-button,
-  .setup-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
-
-  .setup-field input:focus { outline: none; border-color: var(--accent); }
-  .setup-field input::placeholder { color: #333; }
-
-  .setup-unit-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-    align-items: center;
-  }
-
-  .setup-unit-label {
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-right: 4px;
-  }
-
-  .unit-btn {
-    padding: 8px 20px;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    background: transparent;
-    color: var(--muted);
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
+  .setup-unit-row { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; }
+  .setup-unit-label { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-right: 4px; }
+  .unit-btn { padding: 8px 20px; border: 1px solid var(--border); border-radius: 20px; background: transparent; color: var(--muted); font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
   .unit-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
-  .setup-hint {
-    font-size: 0.72rem;
-    color: var(--muted);
-    text-align: center;
-    line-height: 1.7;
-    margin-bottom: 28px;
-  }
-
+  .setup-fields { display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px; }
+  .setup-field label { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .setup-field label span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+  .setup-field input { width: 100%; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1.6rem; font-weight: 700; -moz-appearance: textfield; }
+  .setup-field input::-webkit-outer-spin-button, .setup-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .setup-field input:focus { outline: none; border-color: var(--accent); }
+  .setup-field input::placeholder { color: #333; }
+  .setup-hint { font-size: 0.72rem; color: var(--muted); text-align: center; line-height: 1.7; margin-bottom: 24px; }
   .setup-hint strong { color: var(--text); }
 
-  .btn-primary {
-    width: 100%;
-    padding: 18px;
-    background: var(--accent);
-    color: #000;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
-
-  .btn-primary:active { opacity: 0.8; }
-  .btn-primary:disabled { opacity: 0.3; }
-
-  /* ══════════════════
-     MAIN SCREEN
-  ══════════════════ */
+  /* ── MAIN SCREEN ── */
   .main-screen { padding-bottom: 80px; }
 
-  /* Top bar */
-  .top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px 12px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 100;
-  }
-
-  .top-bar-title {
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-
-  .top-bar-right {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .icon-btn {
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--muted);
-    transition: all 0.15s;
-  }
-
+  .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 100; }
+  .top-bar-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.06em; color: var(--accent); text-transform: uppercase; }
+  .top-bar-right { display: flex; gap: 8px; align-items: center; }
+  .icon-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--muted); transition: all 0.15s; }
   .icon-btn:active { background: var(--surface2); }
 
-  /* Lift tabs */
-  .lift-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
-    position: sticky;
-    top: 57px;
-    z-index: 99;
-  }
+  .lift-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 57px; z-index: 99; }
+  .lift-tab { flex: 1; padding: 14px 0; text-align: center; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; position: relative; }
+  .lift-tab.active-bench { color: var(--bench); border-bottom-color: var(--bench); }
+  .lift-tab.active-deadlift { color: var(--deadlift); border-bottom-color: var(--deadlift); }
+  .lift-tab.active-squat { color: var(--squat); border-bottom-color: var(--squat); }
+  .lift-tab-check { position: absolute; top: 4px; right: 8px; font-size: 0.6rem; color: var(--green); }
 
-  .lift-tab {
-    flex: 1;
-    padding: 14px 0;
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-    position: relative;
-  }
+  .week-banner { padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .week-num { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 2px; }
+  .week-cell { font-size: 1rem; font-weight: 700; color: var(--text); }
+  .week-progress-pct { font-size: 1.1rem; font-weight: 700; color: var(--accent); text-align: right; }
+  .week-progress-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.06em; text-align: right; }
+  .progress-bar { height: 3px; background: var(--border); }
+  .progress-bar-fill { height: 100%; transition: width 0.4s; }
 
-  .lift-tab.active-bench   { color: var(--bench);    border-bottom-color: var(--bench); }
-  .lift-tab.active-deadlift{ color: var(--deadlift); border-bottom-color: var(--deadlift); }
-  .lift-tab.active-squat   { color: var(--squat);    border-bottom-color: var(--squat); }
-
-  .lift-tab-check {
-    position: absolute;
-    top: 4px;
-    right: 8px;
-    font-size: 0.6rem;
-    color: var(--green);
-  }
-
-  /* Week banner */
-  .week-banner {
-    padding: 12px 20px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .week-banner-left {}
-
-  .week-num {
-    font-size: 0.62rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 2px;
-  }
-
-  .week-cell {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  .week-progress {
-    text-align: right;
-  }
-
-  .week-progress-pct {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--accent);
-  }
-
-  .week-progress-label {
-    font-size: 0.6rem;
-    color: var(--muted);
-    letter-spacing: 0.06em;
-  }
-
-  .progress-bar {
-    height: 3px;
-    background: var(--border);
-    margin: 0 20px;
-  }
-
-  .progress-bar-fill {
-    height: 100%;
-    transition: width 0.4s;
-  }
-
-  /* Sets list */
-  .sets-list {
-    padding: 16px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .set-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    transition: all 0.15s;
-    cursor: pointer;
-  }
-
-  .set-card.completed {
-    opacity: 0.45;
-    border-color: var(--green);
-  }
-
+  .sets-list { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .set-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; gap: 14px; padding: 14px 16px; transition: all 0.15s; cursor: pointer; }
+  .set-card.completed { opacity: 0.45; border-color: var(--green); }
   .set-card.completed .set-check { background: var(--green); border-color: var(--green); color: #fff; }
-
-  .set-check {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    color: transparent;
-    flex-shrink: 0;
-    transition: all 0.15s;
-  }
-
+  .set-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: transparent; flex-shrink: 0; transition: all 0.15s; }
   .set-info { flex: 1; }
+  .set-reps { font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
+  .set-weight { font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
+  .set-weight-unit { font-size: 0.75rem; font-weight: 400; color: var(--muted); margin-left: 3px; }
+  .set-side { text-align: right; flex-shrink: 0; cursor: pointer; }
+  .set-side-weight { font-size: 1rem; font-weight: 700; color: var(--muted); }
+  .set-side-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .set-plate-hint { font-size: 0.62rem; color: #444; margin-top: 2px; }
+  .sets-divider { display: flex; align-items: center; gap: 10px; padding: 4px 20px 0; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: #333; }
+  .sets-divider::before, .sets-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  .set-reps {
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-bottom: 2px;
-    letter-spacing: 0.04em;
-  }
+  .feedback-prompt { margin: 0 20px 24px; background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 20px 16px; animation: slideUp 0.2s ease; }
+  .feedback-title { font-size: 0.9rem; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 16px; }
+  .feedback-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .feedback-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 14px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.15s; }
+  .feedback-btn:active { transform: scale(0.96); }
+  .feedback-icon { font-size: 1.4rem; }
+  .feedback-label { font-size: 0.75rem; font-weight: 700; color: var(--text); }
+  .feedback-sub { font-size: 0.6rem; color: var(--muted); }
 
-  .set-weight {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1;
-  }
+  .reassess-banner { margin: 12px 20px 0; background: #2a1f0a; border: 1px solid var(--accent); border-radius: 10px; padding: 14px 16px; display: flex; gap: 12px; }
+  .reassess-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .reassess-title { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-bottom: 3px; }
+  .reassess-desc { font-size: 0.7rem; color: var(--muted); line-height: 1.5; }
+  .reassess-btn { margin-top: 8px; padding: 6px 14px; background: var(--accent); color: #000; font-size: 0.7rem; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; }
 
-  .set-weight-unit {
-    font-size: 0.75rem;
-    font-weight: 400;
-    color: var(--muted);
-    margin-left: 3px;
-  }
-
-  .set-side {
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  .set-side-weight {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--muted);
-  }
-
-  .set-side-label {
-    font-size: 0.6rem;
-    color: var(--muted);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .set-plate-hint {
-    font-size: 0.62rem;
-    color: var(--muted);
-    margin-top: 2px;
-    letter-spacing: 0.02em;
-  }
-
-  /* Section divider */
-  .sets-divider {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 4px 20px 0;
-    font-size: 0.6rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #333;
-  }
-
-  .sets-divider::before, .sets-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* Advance button */
-  .advance-section {
-    padding: 8px 20px 20px;
-  }
-
-  .advance-btn {
-    width: 100%;
-    padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--muted);
-    font-size: 0.82rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-transform: uppercase;
-  }
-
-  .advance-btn:active { background: var(--surface2); }
-  .advance-btn.ready { border-color: var(--green); color: var(--green); }
-
-  /* Bottom nav */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 480px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    display: flex;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    z-index: 200;
-  }
-
-  .nav-item {
-    flex: 1;
-    padding: 10px 0 8px;
-    text-align: center;
-    cursor: pointer;
-    color: var(--muted);
-    transition: color 0.15s;
-  }
-
+  /* ── BOTTOM NAV ── */
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--surface); border-top: 1px solid var(--border); display: flex; padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 200; }
+  .nav-item { flex: 1; padding: 10px 0 8px; text-align: center; cursor: pointer; color: var(--muted); transition: color 0.15s; }
   .nav-item.active { color: var(--accent); }
-
   .nav-icon { font-size: 1.2rem; display: block; margin-bottom: 2px; }
   .nav-label { font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase; }
 
-  /* ══════════════════
-     HISTORY SCREEN
-  ══════════════════ */
-  .history-screen { padding-bottom: 80px; }
-
-  .screen-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 100;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .stat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 1px;
-    background: var(--border);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .stat-box {
-    background: var(--surface);
-    padding: 16px 12px;
-    text-align: center;
-  }
-
-  .stat-box-label {
-    font-size: 0.58rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 4px;
-  }
-
-  .stat-box-value {
-    font-size: 1.4rem;
-    font-weight: 800;
-  }
-
-  .stat-box-sub {
-    font-size: 0.6rem;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-
-  .history-lift-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .history-lift-tab {
-    flex: 1;
-    padding: 12px 0;
-    text-align: center;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-  }
-
+  /* ── HISTORY SCREEN ── */
+  .screen-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 1rem; font-weight: 700; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; position: sticky; top: 0; background: var(--bg); z-index: 100; display: flex; justify-content: space-between; align-items: center; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+  .stat-box { background: var(--surface); padding: 16px 12px; text-align: center; }
+  .stat-box-label { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .stat-box-value { font-size: 1.4rem; font-weight: 800; }
+  .stat-box-sub { font-size: 0.6rem; color: var(--muted); margin-top: 2px; }
+  .history-lift-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .history-lift-tab { flex: 1; padding: 12px 0; text-align: center; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
   .history-lift-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
   .history-log { padding: 0 20px; }
-
-  .history-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 13px 0;
-    border-bottom: 1px solid #1e1e1e;
-    font-size: 0.82rem;
-  }
-
+  .history-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; border-bottom: 1px solid #1e1e1e; font-size: 0.82rem; }
   .history-row:last-child { border-bottom: none; }
-
-  .history-row-left { display: flex; gap: 12px; align-items: center; }
   .history-wk { font-size: 0.62rem; color: var(--muted); min-width: 36px; }
   .history-cell { font-weight: 600; }
   .history-1rep { color: var(--accent); font-weight: 700; }
+  .export-btn { font-size: 0.7rem; padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; }
 
-  .export-btn {
-    font-size: 0.7rem;
-    padding: 6px 14px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--muted);
-    cursor: pointer;
-    letter-spacing: 0.06em;
-  }
+  /* ── MATRIX SCREEN ── */
+  .m-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .m-cell.cur-bench { border-color: var(--bench); background: #2a1f0a; }
+  .m-cell.cur-deadlift { border-color: var(--deadlift); background: #0a1a2a; }
+  .m-cell.cur-squat { border-color: var(--squat); background: #2a0a0a; }
+  .m-cell.done { opacity: 0.35; }
+  .m-cell-header { font-size: 0.68rem; font-weight: 700; color: var(--accent); letter-spacing: 0.08em; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .m-badge { font-size: 0.5rem; padding: 1px 4px; border-radius: 3px; font-weight: 700; color: #000; }
+  .m-row { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; }
+  .m-reps { color: var(--muted); font-size: 0.62rem; min-width: 22px; }
+  .m-weight { font-size: 1rem; font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+  .m-weight:active { background: #ffffff15; }
+  .m-div { border-top: 1px solid #222; margin: 3px 0; }
 
-  .export-btn:active { background: var(--border); }
-
-  /* ══════════════════
-     SETTINGS SCREEN
-  ══════════════════ */
-  .settings-screen { padding-bottom: 80px; }
-
+  /* ── SETTINGS ── */
   .settings-section { padding: 20px; }
-
-  .settings-section-label {
-    font-size: 0.62rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
-
-  .settings-row {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.85rem;
-  }
-
-  .settings-row-label { color: var(--text); }
-  .settings-row-value { color: var(--muted); font-size: 0.78rem; }
-
-  .settings-row.tappable { cursor: pointer; }
-  .settings-row.tappable:active { background: var(--surface2); }
-
-  .settings-1rm-fields { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
-
-  .settings-1rm-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 16px;
-  }
-
-  .settings-1rm-label {
-    font-size: 0.78rem;
-    color: var(--text);
-    min-width: 80px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .settings-1rm-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .settings-1rm-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--text);
-    font-size: 1.1rem;
-    font-weight: 700;
-    text-align: right;
-    -moz-appearance: textfield;
-  }
-
-  .settings-1rm-input::-webkit-outer-spin-button,
-  .settings-1rm-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .settings-section-label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .settings-section-desc { font-size: 0.7rem; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+  .settings-row { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; cursor: pointer; }
+  .settings-row:active { background: var(--surface2); }
+  .settings-1rm-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .settings-1rm-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+  .settings-1rm-label { font-size: 0.78rem; color: var(--text); min-width: 80px; display: flex; align-items: center; gap: 6px; }
+  .settings-1rm-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .settings-1rm-input { flex: 1; background: transparent; border: none; color: var(--text); font-size: 1.1rem; font-weight: 700; text-align: right; -moz-appearance: textfield; }
+  .settings-1rm-input::-webkit-outer-spin-button, .settings-1rm-input::-webkit-inner-spin-button { -webkit-appearance: none; }
   .settings-1rm-input:focus { outline: none; }
-
-  .settings-save-btn {
-    width: 100%;
-    padding: 14px;
-    background: var(--accent);
-    color: #000;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    margin-top: 12px;
-    transition: opacity 0.15s;
-  }
-
+  .reset-lift-btn { padding: 6px 10px; background: transparent; border: 1px solid #444; border-radius: 6px; color: #c47a7a; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; flex-shrink: 0; }
+  .reset-lift-btn:active { background: #2e1a1a; }
+  .settings-save-btn { width: 100%; padding: 14px; background: var(--accent); color: #000; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border: none; border-radius: 10px; cursor: pointer; transition: opacity 0.15s; }
   .settings-save-btn:active { opacity: 0.8; }
-
-  .repeat-btn {
-    width: 100%;
-    padding: 13px;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--muted);
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: all 0.15s;
-    text-transform: uppercase;
-  }
-
-  .repeat-btn:active { background: var(--surface2); }
-
-  /* ══════════════════
-     FEEDBACK PROMPT
-  ══════════════════ */
-  .feedback-prompt {
-    margin: 0 20px 24px;
-    background: var(--surface);
-    border: 1px solid var(--accent);
-    border-radius: 14px;
-    padding: 20px 16px;
-    animation: slideUp 0.2s ease;
-  }
-
-  .feedback-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text);
-    text-align: center;
-    margin-bottom: 16px;
-    letter-spacing: 0.02em;
-  }
-
-  .feedback-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-  }
-
-  .feedback-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    padding: 14px 8px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .feedback-btn:active { transform: scale(0.96); }
-
-  .feedback-good:active   { border-color: var(--green); background: #1a2e1a; }
-  .feedback-repeat:active { border-color: var(--accent2); background: #1a2030; }
-  .feedback-heavy:active  { border-color: var(--squat); background: #2e1a1a; }
-
-  .feedback-icon  { font-size: 1.4rem; }
-  .feedback-label { font-size: 0.75rem; font-weight: 700; color: var(--text); }
-  .feedback-sub   { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.04em; }
-
-  .settings-section-desc {
-    font-size: 0.7rem;
-    color: var(--muted);
-    line-height: 1.6;
-    margin-bottom: 12px;
-  }
-
-  .cell-picker-row {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .cell-picker-label {
-    font-size: 0.78rem;
-    color: var(--text);
-    min-width: 80px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .cell-picker-select {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 8px 10px;
-    -webkit-appearance: none;
-  }
-
+  .cell-picker-row { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .cell-picker-label { font-size: 0.78rem; color: var(--text); min-width: 80px; display: flex; align-items: center; gap: 6px; }
+  .cell-picker-select { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem; font-weight: 600; padding: 8px 10px; -webkit-appearance: none; }
   .cell-picker-select:focus { outline: none; border-color: var(--accent); }
 
-  .reset-lift-btn {
-    padding: 6px 10px;
-    background: transparent;
-    border: 1px solid #444;
-    border-radius: 6px;
-    color: #c47a7a;
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.15s;
-  }
-
-  .reset-lift-btn:active { background: #2e1a1a; border-color: #c47a7a; }
-
-  /* ══════════════════
-     REASSESS BANNER
-  ══════════════════ */
-  .reassess-banner {
-    margin: 12px 20px 0;
-    background: #2a1f0a;
-    border: 1px solid var(--accent);
-    border-radius: 10px;
-    padding: 14px 16px;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  .reassess-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
-
-  .reassess-text { flex: 1; }
-
-  .reassess-title {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--accent);
-    margin-bottom: 3px;
-  }
-
-  .reassess-desc {
-    font-size: 0.7rem;
-    color: var(--muted);
-    line-height: 1.5;
-  }
-
-  .reassess-btn {
-    margin-top: 8px;
-    padding: 6px 14px;
-    background: var(--accent);
-    color: #000;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  /* ══════════════════
-     PLATE POPUP
-  ══════════════════ */
-  .popup-overlay {
-    position: fixed;
-    inset: 0;
-    background: #00000088;
-    z-index: 500;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    animation: fadeIn 0.12s ease;
-  }
-
+  /* ── PLATE POPUP ── */
+  .popup-overlay { position: fixed; inset: 0; background: #00000088; z-index: 500; display: flex; align-items: flex-end; justify-content: center; animation: fadeIn 0.12s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .popup-sheet { background: var(--surface); border-radius: 16px 16px 0 0; border-top: 1px solid var(--border); width: 100%; max-width: 480px; padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)); animation: slideUp 0.18s ease; }
+  .popup-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .popup-weight-num { font-size: 2.4rem; font-weight: 800; color: var(--text); line-height: 1; text-align: center; }
+  .popup-weight-sub { font-size: 0.72rem; color: var(--muted); margin-top: 4px; text-align: center; margin-bottom: 20px; }
+  .popup-bar-diagram { display: flex; align-items: center; justify-content: center; gap: 2px; margin-bottom: 20px; overflow-x: auto; padding: 4px 0; }
+  .popup-bar-center { height: 14px; min-width: 50px; background: #555; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; color: #aaa; flex-shrink: 0; }
+  .popup-collar { width: 8px; height: 20px; background: #777; border-radius: 1px; flex-shrink: 0; }
+  .popup-plate-block { display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; color: #fff; border-radius: 3px; min-width: 18px; padding: 0 4px; flex-shrink: 0; }
+  .popup-chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+  .popup-chip { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .popup-chip-val { padding: 10px 16px; font-size: 1.1rem; font-weight: 800; color: #fff; border-radius: 8px; min-width: 60px; text-align: center; }
+  .popup-chip-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
 
-  .popup-sheet {
-    background: var(--surface);
-    border-radius: 16px 16px 0 0;
-    border-top: 1px solid var(--border);
-    width: 100%;
-    max-width: 480px;
-    padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
-    animation: slideUp 0.18s ease;
-  }
-
-  .popup-handle {
-    width: 36px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto 20px;
-  }
-
-  .popup-weight-display {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
-  .popup-weight-num {
-    font-size: 2.4rem;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1;
-  }
-
-  .popup-weight-sub {
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-top: 4px;
-    letter-spacing: 0.04em;
-  }
-
-  .popup-bar-diagram {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    margin-bottom: 20px;
-    overflow-x: auto;
-    padding: 4px 0;
-  }
-
-  .popup-bar-center {
-    height: 14px;
-    min-width: 50px;
-    background: #555;
-    border-radius: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.5rem;
-    color: #aaa;
-    flex-shrink: 0;
-  }
-
-  .popup-collar {
-    width: 8px;
-    height: 20px;
-    background: #777;
-    border-radius: 1px;
-    flex-shrink: 0;
-  }
-
-  .popup-plate-block {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.6rem;
-    font-weight: 700;
-    color: #fff;
-    border-radius: 3px;
-    min-width: 18px;
-    padding: 0 4px;
-    flex-shrink: 0;
-  }
-
-  .popup-chips {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .popup-chip {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .popup-chip-val {
-    padding: 10px 16px;
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #fff;
-    border-radius: 8px;
-    min-width: 60px;
-    text-align: center;
-  }
-
-  .popup-chip-label {
-    font-size: 0.6rem;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  /* ══════════════════
-     NO POSITION STATE
-  ══════════════════ */
-  .empty-state {
-    padding: 48px 24px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 0.82rem;
-    line-height: 2;
-  }
-
+  .empty-state { padding: 48px 24px; text-align: center; color: var(--muted); font-size: 0.82rem; line-height: 2; }
   .empty-state-icon { font-size: 2.5rem; display: block; margin-bottom: 16px; opacity: 0.4; }
 
-  /* ══ MATRIX CELLS ══ */
-  .m-cell {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px;
-    font-size: 0.72rem;
-  }
-
-  .m-cell.cur-bench    { border-color: var(--bench);    background: #2a1f0a; }
-  .m-cell.cur-deadlift { border-color: var(--deadlift); background: #0a1a2a; }
-  .m-cell.cur-squat    { border-color: var(--squat);    background: #2a0a0a; }
-  .m-cell.done { opacity: 0.35; }
-
-  .m-cell-header {
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 0.08em;
-    margin-bottom: 8px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .m-cell-badges { display: flex; gap: 3px; }
-
-  .m-badge {
-    font-size: 0.5rem;
-    padding: 1px 4px;
-    border-radius: 3px;
-    font-weight: 700;
-    color: #000;
-  }
-
-  .m-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 2px 0;
-  }
-
-  .m-reps { color: var(--muted); font-size: 0.62rem; min-width: 22px; }
-
-  .m-weight {
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: background 0.1s;
-  }
-
-  .m-weight:active { background: #ffffff15; }
-  .m-div { border-top: 1px solid #222; margin: 3px 0; }</style>
+  .saving-indicator { position: fixed; top: 12px; right: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 0.62rem; color: var(--muted); z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+  .saving-indicator.show { opacity: 1; }
 </style>
 </head>
 <body>
 
-<!-- ══ SETUP SCREEN ══ -->
-<div id="setupScreen" class="screen setup-screen active">
+<!-- ── AUTH SCREEN ── -->
+<div id="authScreen" class="screen auth-screen active">
+  <div class="auth-logo">
+    <h1>Power Matrix</h1>
+    <p>Bench · Deadlift · Squat</p>
+  </div>
+  <div class="auth-tabs">
+    <div class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Sign In</div>
+    <div class="auth-tab" id="authTabSignup" onclick="switchAuthTab('signup')">Sign Up</div>
+  </div>
+  <div class="auth-field">
+    <label>Email</label>
+    <input type="email" id="authEmail" placeholder="you@example.com" />
+  </div>
+  <div class="auth-field">
+    <label>Password</label>
+    <input type="password" id="authPassword" placeholder="••••••••" />
+  </div>
+  <div class="auth-error" id="authError"></div>
+  <button class="btn-primary" id="authBtn" onclick="handleAuth()">Sign In</button>
+  <div class="auth-switch" id="authSwitch">No account? <span onclick="switchAuthTab('signup')">Sign up free</span></div>
+</div>
+
+<!-- ── SETUP SCREEN ── -->
+<div id="setupScreen" class="screen setup-screen">
   <div class="setup-logo">
     <h1>Power Matrix</h1>
-    <p>Enter your best recent single rep for each lift.<br>The app finds your starting point automatically.</p>
+    <p>Enter your best recent single rep for each lift.<br>The app finds your starting point at 80%.</p>
   </div>
-
   <div class="setup-unit-row">
     <span class="setup-unit-label">Units</span>
     <button class="unit-btn active" id="setupUnitLbs" onclick="setUnit('lbs')">LBS</button>
     <button class="unit-btn" id="setupUnitKg" onclick="setUnit('kg')">KG</button>
   </div>
-
   <div class="setup-fields">
     <div class="setup-field">
-      <label><span style="background:var(--bench)"></span> Bench Press</label>
+      <label><span style="background:var(--bench)"></span>Bench Press</label>
       <input type="number" id="setupBench" placeholder="225" min="45" max="900" oninput="checkSetup()" />
     </div>
     <div class="setup-field">
-      <label><span style="background:var(--deadlift)"></span> Deadlift</label>
+      <label><span style="background:var(--deadlift)"></span>Deadlift</label>
       <input type="number" id="setupDeadlift" placeholder="315" min="45" max="900" oninput="checkSetup()" />
     </div>
     <div class="setup-field">
-      <label><span style="background:var(--squat)"></span> Back Squat</label>
+      <label><span style="background:var(--squat)"></span>Back Squat</label>
       <input type="number" id="setupSquat" placeholder="275" min="45" max="900" oninput="checkSetup()" />
     </div>
   </div>
-
-  <p class="setup-hint">Your starting cell is set at <strong>80% of your max</strong> — conservative and buildable. You'll be prompted to reassess every 4 weeks.</p>
-
+  <p class="setup-hint">Your progress is saved to the cloud — access it from any device.</p>
   <button class="btn-primary" id="setupBtn" onclick="completeSetup()" disabled>Start Training</button>
 </div>
 
-<!-- ══ MAIN SCREEN ══ -->
+<!-- ── MAIN SCREEN ── -->
 <div id="mainScreen" class="screen main-screen">
   <div class="top-bar">
     <div class="top-bar-title">Power Matrix</div>
     <div class="top-bar-right">
-      <div class="icon-btn" id="unitToggle" onclick="toggleUnit()" title="Toggle units">LBS</div>
+      <div class="icon-btn" id="unitToggle" onclick="toggleUnit()">LBS</div>
     </div>
   </div>
-
   <div class="lift-tabs">
     <div class="lift-tab" id="tabBench"    onclick="setLift('bench')">Bench<span class="lift-tab-check" id="checkBench"></span></div>
     <div class="lift-tab" id="tabDeadlift" onclick="setLift('deadlift')">Deadlift<span class="lift-tab-check" id="checkDeadlift"></span></div>
     <div class="lift-tab" id="tabSquat"    onclick="setLift('squat')">Squat<span class="lift-tab-check" id="checkSquat"></span></div>
   </div>
-
   <div id="reassessBanner" style="display:none">
     <div class="reassess-banner">
       <div class="reassess-icon">🔄</div>
-      <div class="reassess-text">
+      <div>
         <div class="reassess-title">Time to Reassess</div>
-        <div class="reassess-desc">4 weeks have passed. Update your 1-rep maxes to recalibrate your starting point.</div>
-        <button class="reassess-btn" onclick="goToSettings()">Update Maxes</button>
+        <div class="reassess-desc">4 weeks have passed. Update your maxes to recalibrate.</div>
+        <button class="reassess-btn" onclick="showScreen('settings')">Update Maxes</button>
       </div>
     </div>
   </div>
-
   <div class="week-banner">
-    <div class="week-banner-left">
+    <div>
       <div class="week-num" id="weekNum">WEEK 1</div>
       <div class="week-cell" id="weekCell">—</div>
     </div>
-    <div class="week-progress">
+    <div>
       <div class="week-progress-pct" id="weekPct">0%</div>
       <div class="week-progress-label">Complete</div>
     </div>
   </div>
   <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
-
   <div class="sets-list" id="setsList"></div>
-
-  <div id="advanceSection" style="display:none"></div>
-
-  <!-- Feedback prompt — shown after all sets checked off -->
-  <div class="feedback-prompt" id="feedbackPrompt" style="display:none">
+  <div id="feedbackPrompt" style="display:none" class="feedback-prompt">
     <div class="feedback-title">How did that feel?</div>
     <div class="feedback-buttons">
-      <button class="feedback-btn feedback-good" onclick="feedbackGood()">
-        <span class="feedback-icon">✅</span>
-        <span class="feedback-label">Good</span>
-        <span class="feedback-sub">Next cell</span>
-      </button>
-      <button class="feedback-btn feedback-repeat" onclick="feedbackRepeat()">
-        <span class="feedback-icon">🔁</span>
-        <span class="feedback-label">Repeat</span>
-        <span class="feedback-sub">Same cell</span>
-      </button>
-      <button class="feedback-btn feedback-heavy" onclick="feedbackHeavy()">
-        <span class="feedback-icon">👇</span>
-        <span class="feedback-label">Too heavy</span>
-        <span class="feedback-sub">Go back one</span>
-      </button>
+      <button class="feedback-btn" onclick="feedbackGood()"><span class="feedback-icon">✅</span><span class="feedback-label">Good</span><span class="feedback-sub">Next cell</span></button>
+      <button class="feedback-btn" onclick="feedbackRepeat()"><span class="feedback-icon">🔁</span><span class="feedback-label">Repeat</span><span class="feedback-sub">Same cell</span></button>
+      <button class="feedback-btn" onclick="feedbackHeavy()"><span class="feedback-icon">👇</span><span class="feedback-label">Too heavy</span><span class="feedback-sub">Go back one</span></button>
     </div>
   </div>
 </div>
 
-<!-- ══ MATRIX SCREEN ══ -->
-<div id="matrixScreen" class="screen" style="padding-bottom:80px;overflow-x:auto">
+<!-- ── MATRIX SCREEN ── -->
+<div id="matrixScreen" class="screen" style="padding-bottom:80px">
   <div class="screen-header">
     Full Matrix
     <div style="display:flex;gap:8px">
@@ -1146,120 +335,101 @@
       <button class="unit-btn" id="matrixUnitKg"  onclick="setUnit('kg')"  style="padding:4px 12px;font-size:0.65rem">KG</button>
     </div>
   </div>
-  <div style="padding:10px 16px;font-size:0.68rem;color:var(--muted);line-height:1.6;border-bottom:1px solid var(--border)">
-    Tap any weight to see the plate breakdown. Your current cell for each lift is highlighted.
-  </div>
+  <div style="padding:10px 16px;font-size:0.68rem;color:var(--muted);border-bottom:1px solid var(--border)">Tap any weight for plate breakdown. Highlighted cells are your current position.</div>
   <div id="matrixGrid" style="padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px"></div>
 </div>
 
-<!-- ══ HISTORY SCREEN ══ -->
-<div id="historyScreen" class="screen history-screen">
-  <div class="screen-header">
-    History
-    <button class="export-btn" onclick="exportProgress()">Export</button>
-  </div>
-
+<!-- ── HISTORY SCREEN ── -->
+<div id="historyScreen" class="screen" style="padding-bottom:80px">
+  <div class="screen-header">History<button class="export-btn" onclick="exportProgress()">Export</button></div>
   <div class="stat-grid" id="historyStats"></div>
-
   <div class="history-lift-tabs">
     <div class="history-lift-tab active" id="hTabBench"    onclick="setHistoryLift('bench')">Bench</div>
     <div class="history-lift-tab"        id="hTabDeadlift" onclick="setHistoryLift('deadlift')">Deadlift</div>
     <div class="history-lift-tab"        id="hTabSquat"    onclick="setHistoryLift('squat')">Squat</div>
   </div>
-
   <div class="history-log" id="historyLog"></div>
 </div>
 
-<!-- ══ SETTINGS SCREEN ══ -->
-<div id="settingsScreen" class="screen settings-screen">
+<!-- ── SETTINGS SCREEN ── -->
+<div id="settingsScreen" class="screen" style="padding-bottom:80px">
   <div class="screen-header">Settings</div>
-
   <div class="settings-section">
     <div class="settings-section-label">Units</div>
     <div class="settings-row">
-      <span class="settings-row-label">Weight</span>
+      <span>Weight</span>
       <div style="display:flex;gap:8px">
         <button class="unit-btn active" id="settingsUnitLbs" onclick="setUnit('lbs')">LBS</button>
         <button class="unit-btn" id="settingsUnitKg" onclick="setUnit('kg')">KG</button>
       </div>
     </div>
   </div>
-
   <div class="settings-section">
     <div class="settings-section-label">1-Rep Maxes</div>
     <div class="settings-1rm-fields">
       <div class="settings-1rm-row">
         <span class="settings-1rm-label"><span class="settings-1rm-dot" style="background:var(--bench)"></span>Bench</span>
-        <input type="number" class="settings-1rm-input" id="settings1rmBench" placeholder="—" min="45" max="900" />
+        <input type="number" class="settings-1rm-input" id="settings1rmBench" placeholder="—" />
         <button class="reset-lift-btn" onclick="resetLiftMax('bench')">Reset</button>
       </div>
       <div class="settings-1rm-row">
         <span class="settings-1rm-label"><span class="settings-1rm-dot" style="background:var(--deadlift)"></span>Deadlift</span>
-        <input type="number" class="settings-1rm-input" id="settings1rmDeadlift" placeholder="—" min="45" max="900" />
+        <input type="number" class="settings-1rm-input" id="settings1rmDeadlift" placeholder="—" />
         <button class="reset-lift-btn" onclick="resetLiftMax('deadlift')">Reset</button>
       </div>
       <div class="settings-1rm-row">
         <span class="settings-1rm-label"><span class="settings-1rm-dot" style="background:var(--squat)"></span>Squat</span>
-        <input type="number" class="settings-1rm-input" id="settings1rmSquat" placeholder="—" min="45" max="900" />
+        <input type="number" class="settings-1rm-input" id="settings1rmSquat" placeholder="—" />
         <button class="reset-lift-btn" onclick="resetLiftMax('squat')">Reset</button>
       </div>
     </div>
     <button class="settings-save-btn" onclick="saveSettings()">Save & Recalibrate</button>
   </div>
-
   <div class="settings-section">
     <div class="settings-section-label">Jump to Cell</div>
-    <div class="settings-section-desc">Move to a specific cell without clearing history. Useful if you want to start higher or lower.</div>
+    <div class="settings-section-desc">Move to a specific cell without clearing history.</div>
     <div id="cellPickerRows"></div>
     <button class="settings-save-btn" onclick="saveCell()" style="margin-top:12px">Jump to Cell</button>
   </div>
-
   <div class="settings-section">
-    <div class="settings-section-label">Progress</div>
-    <div class="settings-row tappable" onclick="if(confirm('Reset all progress? This cannot be undone.')) resetAll()">
-      <span class="settings-row-label" style="color:#c47a7a">Reset All Progress</span>
-      <span class="settings-row-value">→</span>
+    <div class="settings-section-label">Account</div>
+    <div class="settings-row" onclick="if(confirm('Reset all progress?')) resetAll()">
+      <span style="color:#c47a7a">Reset All Progress</span><span style="color:var(--muted)">→</span>
+    </div>
+    <div class="settings-row" onclick="signOut()">
+      <span style="color:var(--muted)">Sign Out</span><span style="color:var(--muted)">→</span>
     </div>
   </div>
 </div>
 
-<!-- ══ BOTTOM NAV ══ -->
+<!-- ── BOTTOM NAV ── -->
 <div class="bottom-nav" id="bottomNav" style="display:none">
-  <div class="nav-item active" id="navWorkout" onclick="showScreen('main')">
-    <span class="nav-icon">🏋️</span>
-    <span class="nav-label">Workout</span>
-  </div>
-  <div class="nav-item" id="navMatrix" onclick="showScreen('matrix')">
-    <span class="nav-icon">🔢</span>
-    <span class="nav-label">Matrix</span>
-  </div>
-  <div class="nav-item" id="navHistory" onclick="showScreen('history')">
-    <span class="nav-icon">📈</span>
-    <span class="nav-label">History</span>
-  </div>
-  <div class="nav-item" id="navSettings" onclick="showScreen('settings')">
-    <span class="nav-icon">⚙️</span>
-    <span class="nav-label">Settings</span>
-  </div>
+  <div class="nav-item active" id="navWorkout" onclick="showScreen('main')"><span class="nav-icon">🏋️</span><span class="nav-label">Workout</span></div>
+  <div class="nav-item" id="navMatrix"  onclick="showScreen('matrix')"><span class="nav-icon">🔢</span><span class="nav-label">Matrix</span></div>
+  <div class="nav-item" id="navHistory" onclick="showScreen('history')"><span class="nav-icon">📈</span><span class="nav-label">History</span></div>
+  <div class="nav-item" id="navSettings" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></div>
 </div>
 
-<!-- ══ PLATE POPUP ══ -->
+<!-- ── PLATE POPUP ── -->
 <div id="platePopup" class="popup-overlay" style="display:none" onclick="if(event.target===this)closePlatePopup()">
   <div class="popup-sheet">
     <div class="popup-handle"></div>
-    <div class="popup-weight-display">
-      <div class="popup-weight-num" id="popupWeightNum"></div>
-      <div class="popup-weight-sub" id="popupWeightSub"></div>
-    </div>
+    <div class="popup-weight-num" id="popupWeightNum"></div>
+    <div class="popup-weight-sub" id="popupWeightSub"></div>
     <div class="popup-bar-diagram" id="popupDiagram"></div>
     <div class="popup-chips" id="popupChips"></div>
   </div>
 </div>
 
+<div class="saving-indicator" id="savingIndicator">Saving…</div>
+
 <script>
-// ─────────────────────────────────────────
-// MATRIX DATA
-// ─────────────────────────────────────────
+// ── SUPABASE ──
+const SUPABASE_URL = 'https://rwtgleklptqixhigbrzy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_FmnA6zlmepS-mMMKg3soVw_xLGJc6XX';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── MATRIX DATA ──
 const MATRIX = [
   ["100-105",70,80,85,90,80],["110-115",90,100,105,110,100],["120-125",95,100,110,115,100],
   ["130-135",100,105,115,120,105],["140-145",105,110,120,130,110],["150-155",110,115,125,140,115],
@@ -1286,57 +456,158 @@ const MATRIX = [
   ["720-725",410,515,580,685,515],["730-735",420,525,585,700,525],
 ];
 
-const SET_DEFS = [
-  { reps: 8,  key: 1 },
-  { reps: 5,  key: 2 },
-  { reps: 3,  key: 3 },
-  { reps: 1,  key: 4 },
-  { reps: 1,  key: 4 },
-  { reps: 1,  key: 4 },
-  { reps: 5,  key: 5 },
-];
-
 const LIFT_META = {
   bench:    { label: 'Bench Press', color: 'var(--bench)' },
   deadlift: { label: 'Deadlift',    color: 'var(--deadlift)' },
   squat:    { label: 'Back Squat',  color: 'var(--squat)' },
 };
 
-// ─────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────
+// ── STATE ──
 let STATE = {
-  setup: false,
   unit: 'lbs',
   setupDate: null,
-  bench:    { current: null, completed: [], setsDone: [], weekDone: false },
-  deadlift: { current: null, completed: [], setsDone: [], weekDone: false },
-  squat:    { current: null, completed: [], setsDone: [], weekDone: false },
+  maxes: {},
+  bench:    { current: null, completed: [], setsDone: [] },
+  deadlift: { current: null, completed: [], setsDone: [] },
+  squat:    { current: null, completed: [], setsDone: [] },
 };
 
+let currentUser = null;
 let activeLift = 'bench';
 let activeHistoryLift = 'bench';
-let activeScreen = 'setup';
+let saveTimer = null;
 
-function loadState() {
-  try {
-    const s = JSON.parse(localStorage.getItem('pm_v4') || 'null');
-    if (s) STATE = s;
-    // Ensure arrays exist
-    ['bench','deadlift','squat'].forEach(l => {
-      STATE[l].completed = STATE[l].completed || [];
-      STATE[l].setsDone  = STATE[l].setsDone  || [];
-    });
-  } catch(e) {}
+// ── AUTH ──
+let authMode = 'login';
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById('authTabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('authTabSignup').classList.toggle('active', mode === 'signup');
+  document.getElementById('authBtn').textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+  document.getElementById('authSwitch').innerHTML = mode === 'login'
+    ? 'No account? <span onclick="switchAuthTab(\'signup\')">Sign up free</span>'
+    : 'Have an account? <span onclick="switchAuthTab(\'login\')">Sign in</span>';
+  document.getElementById('authError').textContent = '';
 }
 
-function saveState() {
-  try { localStorage.setItem('pm_v4', JSON.stringify(STATE)); } catch(e) {}
+async function handleAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const btn = document.getElementById('authBtn');
+  const errEl = document.getElementById('authError');
+
+  if (!email || !password) { errEl.textContent = 'Please enter email and password.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = '…';
+  errEl.textContent = '';
+
+  let result;
+  if (authMode === 'login') {
+    result = await sb.auth.signInWithPassword({ email, password });
+  } else {
+    result = await sb.auth.signUp({ email, password });
+  }
+
+  if (result.error) {
+    errEl.textContent = result.error.message;
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
+  } else {
+    currentUser = result.data.user;
+    await loadFromSupabase();
+  }
 }
 
-// ─────────────────────────────────────────
-// UNITS + PLATE MATH
-// ─────────────────────────────────────────
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+  STATE = { unit:'lbs', setupDate:null, maxes:{}, bench:{current:null,completed:[],setsDone:[]}, deadlift:{current:null,completed:[],setsDone:[]}, squat:{current:null,completed:[],setsDone:[]} };
+  document.getElementById('bottomNav').style.display = 'none';
+  ['main','matrix','history','settings','setup'].forEach(s => document.getElementById(s+'Screen').classList.remove('active'));
+  document.getElementById('authScreen').classList.add('active');
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+}
+
+// ── SUPABASE LOAD/SAVE ──
+async function loadFromSupabase() {
+  if (!currentUser) return;
+
+  const { data, error } = await sb
+    .from('progress')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .single();
+
+  if (data) {
+    STATE.unit        = data.unit || 'lbs';
+    STATE.setupDate   = data.setup_date;
+    STATE.maxes       = data.maxes || {};
+    STATE.bench       = { current: data.bench_current, completed: data.bench_completed || [], setsDone: data.bench_sets_done || [] };
+    STATE.deadlift    = { current: data.deadlift_current, completed: data.deadlift_completed || [], setsDone: data.deadlift_sets_done || [] };
+    STATE.squat       = { current: data.squat_current, completed: data.squat_completed || [], setsDone: data.squat_sets_done || [] };
+  }
+
+  const isSetup = STATE.bench.current !== null || STATE.deadlift.current !== null || STATE.squat.current !== null;
+
+  document.getElementById('authScreen').classList.remove('active');
+
+  if (!isSetup) {
+    document.getElementById('setupScreen').classList.add('active');
+    setUnit(STATE.unit);
+  } else {
+    document.getElementById('mainScreen').classList.add('active');
+    document.getElementById('bottomNav').style.display = 'flex';
+    renderAll();
+  }
+}
+
+async function saveToSupabase() {
+  if (!currentUser) return;
+
+  showSaving();
+
+  const payload = {
+    user_id:             currentUser.id,
+    unit:                STATE.unit,
+    setup_date:          STATE.setupDate,
+    maxes:               STATE.maxes,
+    bench_current:       STATE.bench.current,
+    bench_completed:     STATE.bench.completed,
+    bench_sets_done:     STATE.bench.setsDone,
+    deadlift_current:    STATE.deadlift.current,
+    deadlift_completed:  STATE.deadlift.completed,
+    deadlift_sets_done:  STATE.deadlift.setsDone,
+    squat_current:       STATE.squat.current,
+    squat_completed:     STATE.squat.completed,
+    squat_sets_done:     STATE.squat.setsDone,
+    updated_at:          new Date().toISOString(),
+  };
+
+  await sb.from('progress').upsert(payload, { onConflict: 'user_id' });
+  hideSaving();
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToSupabase, 1000);
+}
+
+function showSaving() {
+  const el = document.getElementById('savingIndicator');
+  el.textContent = 'Saving…';
+  el.classList.add('show');
+}
+
+function hideSaving() {
+  const el = document.getElementById('savingIndicator');
+  el.textContent = '✓ Saved';
+  setTimeout(() => el.classList.remove('show'), 1200);
+}
+
+// ── UNITS + PLATES ──
 const BAR_LBS = 45, BAR_KG = 20;
 const PLATES_LBS = [45, 35, 25, 10, 5];
 const PLATES_KG  = [20, 15, 10, 5, 2.5];
@@ -1347,10 +618,9 @@ function toDisplay(lbs) {
 }
 
 function snapWeight(lbs) {
-  const bar = BAR_LBS;
-  if (lbs <= bar) return bar;
-  const perSide = (lbs - bar) / 2;
-  return bar + Math.round(perSide / 5) * 5 * 2;
+  if (lbs <= BAR_LBS) return BAR_LBS;
+  const perSide = (lbs - BAR_LBS) / 2;
+  return BAR_LBS + Math.round(perSide / 5) * 5 * 2;
 }
 
 function getPlates(lbs) {
@@ -1360,92 +630,76 @@ function getPlates(lbs) {
     const perSide = (kg - BAR_KG) / 2;
     if (perSide <= 0) return { display: kg, bar: BAR_KG, perSide: 0, plates: [] };
     let rem = perSide, plates = [];
-    for (const p of PLATES_KG) {
-      while (rem >= p - 0.01) { plates.push(p); rem = Math.round((rem - p)*100)/100; }
-    }
+    for (const p of PLATES_KG) { while (rem >= p - 0.01) { plates.push(p); rem = Math.round((rem-p)*100)/100; } }
     return { display: kg, bar: BAR_KG, perSide, plates };
   } else {
     const perSide = (snapped - BAR_LBS) / 2;
     if (perSide <= 0) return { display: snapped, bar: BAR_LBS, perSide: 0, plates: [] };
     let rem = perSide, plates = [];
-    for (const p of PLATES_LBS) {
-      while (rem >= p - 0.01) { plates.push(p); rem = Math.round((rem - p)*100)/100; }
-    }
+    for (const p of PLATES_LBS) { while (rem >= p - 0.01) { plates.push(p); rem = Math.round((rem-p)*100)/100; } }
     return { display: snapped, bar: BAR_LBS, perSide, plates };
   }
 }
 
 function plateColor(p) {
-  if (p === 45 || p === 20) return '#c0392b';
-  if (p === 35 || p === 15) return '#d35400';
-  if (p === 25) return '#2471a3';
-  if (p === 10) return '#1e8449';
-  if (p === 5) return '#9a7d0a';
+  if (p===45||p===20) return '#c0392b';
+  if (p===35||p===15) return '#d35400';
+  if (p===25) return '#2471a3';
+  if (p===10) return '#1e8449';
+  if (p===5)  return '#9a7d0a';
   return '#707070';
 }
 
 function plateHeight(p) {
-  const h = {45:44,35:38,25:32,20:44,15:38,10:26,5:20,2.5:16};
-  return h[p] || 20;
+  return {45:44,35:38,25:32,20:44,15:38,10:26,5:20,2.5:16}[p]||20;
 }
 
 function unitStr() { return STATE.unit.toUpperCase(); }
 
-// ─────────────────────────────────────────
-// SETUP
-// ─────────────────────────────────────────
 function setUnit(unit) {
   STATE.unit = unit;
-  saveState();
   ['Lbs','Kg'].forEach(u => {
-    ['setup','settings'].forEach(prefix => {
-      const el = document.getElementById(prefix + 'Unit' + u);
-      if (el) el.classList.toggle('active', u.toLowerCase() === unit);
+    ['setup','settings','matrix'].forEach(p => {
+      const el = document.getElementById(p+'Unit'+u);
+      if (el) el.classList.toggle('active', u.toLowerCase()===unit);
     });
   });
   document.getElementById('unitToggle').textContent = unit.toUpperCase();
-  if (STATE.setup) renderWorkout();
+  if (STATE.bench.current !== null) { renderWorkout(); renderMatrix(); }
+  scheduleSave();
 }
 
+function toggleUnit() { setUnit(STATE.unit === 'lbs' ? 'kg' : 'lbs'); }
+
+// ── SETUP ──
 function checkSetup() {
   const b = parseInt(document.getElementById('setupBench').value);
   const d = parseInt(document.getElementById('setupDeadlift').value);
   const s = parseInt(document.getElementById('setupSquat').value);
-  document.getElementById('setupBtn').disabled = !(b > 0 && d > 0 && s > 0);
+  document.getElementById('setupBtn').disabled = !(b>0 && d>0 && s>0);
 }
 
 function findCell(maxLbs) {
   const target = Math.round(maxLbs * 0.80 / 5) * 5;
   let best = 0;
-  for (let i = 0; i < MATRIX.length; i++) {
-    if (MATRIX[i][4] <= target) best = i;
-    else break;
-  }
+  for (let i = 0; i < MATRIX.length; i++) { if (MATRIX[i][4] <= target) best = i; else break; }
   return best;
 }
 
-function completeSetup() {
-  const unit = STATE.unit;
-  const toUse = (val) => unit === 'kg' ? val / 0.453592 : val;
-
+async function completeSetup() {
+  const toUse = v => STATE.unit==='kg' ? v/0.453592 : v;
   const b = parseInt(document.getElementById('setupBench').value);
   const d = parseInt(document.getElementById('setupDeadlift').value);
   const s = parseInt(document.getElementById('setupSquat').value);
 
-  if (!STATE.maxes) STATE.maxes = {};
-  STATE.maxes.bench    = b;
-  STATE.maxes.deadlift = d;
-  STATE.maxes.squat    = s;
-
+  STATE.maxes = { bench: b, deadlift: d, squat: s };
   STATE.bench.current    = findCell(toUse(b));
   STATE.deadlift.current = findCell(toUse(d));
   STATE.squat.current    = findCell(toUse(s));
-  STATE.bench.setsDone    = [];
-  STATE.deadlift.setsDone = [];
-  STATE.squat.setsDone    = [];
+  STATE.bench.setsDone = []; STATE.deadlift.setsDone = []; STATE.squat.setsDone = [];
   STATE.setupDate = Date.now();
-  STATE.setup = true;
-  saveState();
+
+  await saveToSupabase();
 
   document.getElementById('setupScreen').classList.remove('active');
   document.getElementById('mainScreen').classList.add('active');
@@ -1454,514 +708,325 @@ function completeSetup() {
   renderAll();
 }
 
-// ─────────────────────────────────────────
-// SCREEN ROUTING
-// ─────────────────────────────────────────
+// ── SCREENS ──
 function showScreen(name) {
-  activeScreen = name;
-  ['main','history','settings'].forEach(s => {
-    document.getElementById(s + 'Screen').classList.toggle('active', s === name);
-  });
-  ['Workout','History','Settings'].forEach(n => {
-    const id = 'nav' + n;
-    const map = { Workout: 'main', History: 'history', Settings: 'settings' };
-    document.getElementById(id).classList.toggle('active', map[n] === name);
-  });
-  if (name === 'history') renderHistory();
-  if (name === 'settings') populateSettings();
-}
-
-function showScreen(name) {
-  activeScreen = name;
-  ['main','matrix','history','settings'].forEach(s => {
-    document.getElementById(s + 'Screen').classList.toggle('active', s === name);
-  });
+  ['main','matrix','history','settings'].forEach(s => document.getElementById(s+'Screen').classList.toggle('active', s===name));
   ['Workout','Matrix','History','Settings'].forEach(n => {
-    const el = document.getElementById('nav' + n);
-    if (el) {
-      const map = { Workout:'main', Matrix:'matrix', History:'history', Settings:'settings' };
-      el.classList.toggle('active', map[n] === name);
-    }
+    const el = document.getElementById('nav'+n);
+    if (el) { const map={Workout:'main',Matrix:'matrix',History:'history',Settings:'settings'}; el.classList.toggle('active', map[n]===name); }
   });
-  if (name === 'history') renderHistory();
-  if (name === 'settings') populateSettings();
-  if (name === 'matrix') renderMatrix();
+  if (name==='history') renderHistory();
+  if (name==='settings') populateSettings();
+  if (name==='matrix') renderMatrix();
 }
 
-function goToSettings() { showScreen('settings'); }
+// ── WORKOUT ──
+function setLift(lift) { activeLift = lift; renderWorkout(); }
 
-// ─────────────────────────────────────────
-// MATRIX VIEW
-// ─────────────────────────────────────────
-function renderMatrix() {
-  // Update unit buttons
-  ['Lbs','Kg'].forEach(u => {
-    const el = document.getElementById('matrixUnit' + u);
-    if (el) el.classList.toggle('active', u.toLowerCase() === STATE.unit);
-  });
-
-  const rowStarts = [100,170,240,310,380,450,520,590,660];
-  const grid = document.getElementById('matrixGrid');
-  let html = '';
-  let rowIdx = -1;
-
-  MATRIX.forEach((cell, idx) => {
-    const [label,r8,r5,r3,r1,back] = cell;
-    const base = parseInt(label);
-    const newRow = rowStarts.findIndex(rs => base >= rs && base < rs + 70);
-
-    if (newRow > rowIdx) {
-      rowIdx = newRow;
-      html += `<div style="grid-column:1/-1;font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;padding:6px 0 2px;border-bottom:1px solid var(--border);margin-bottom:2px">Row ${rowIdx+1}</div>`;
-    }
-
-    // Check which lifts are on this cell
-    const badges = ['bench','deadlift','squat'].filter(l => STATE[l].current === idx);
-    const isCompleted = ['bench','deadlift','squat'].every(l => STATE[l].completed.includes(idx));
-
-    let cls = 'm-cell';
-    if (badges.includes('bench'))    cls += ' cur-bench';
-    else if (badges.includes('deadlift')) cls += ' cur-deadlift';
-    else if (badges.includes('squat'))    cls += ' cur-squat';
-    if (isCompleted) cls += ' done';
-
-    const badgeColors = { bench: 'var(--bench)', deadlift: 'var(--deadlift)', squat: 'var(--squat)' };
-    const badgeLabels = { bench: 'B', deadlift: 'D', squat: 'S' };
-    const badgeHTML = badges.map(l =>
-      `<span class="m-badge" style="background:${badgeColors[l]}">${badgeLabels[l]}</span>`
-    ).join('');
-
-    const cellLabel = STATE.unit === 'kg'
-      ? `${toDisplay(parseInt(label))}–${toDisplay(parseInt(label.split('-')[1]))}`
-      : label;
-
-    const weights = [r8, r5, r3, r1, back];
-    const reps    = [8,  5,  3,  1,  5 ];
-    const colors  = ['#6db88a','#6db88a','#d48080','var(--accent)','var(--accent2)'];
-    const divs    = [false, false, true, false, true];
-
-    let rows = '';
-    weights.forEach((w, i) => {
-      const pd = getPlates(w);
-      if (divs[i]) rows += `<div class="m-div"></div>`;
-      rows += `<div class="m-row">
-        <span class="m-reps">${reps[i]}×</span>
-        <span class="m-weight" style="color:${colors[i]}" onclick="event.stopPropagation();showPlatePopup(${w})">${pd.display}</span>
-      </div>`;
-    });
-
-    html += `<div class="${cls}">
-      <div class="m-cell-header">
-        <span>${cellLabel}</span>
-        <div class="m-cell-badges">${badgeHTML}</div>
-      </div>
-      ${rows}
-    </div>`;
-  });
-
-  grid.innerHTML = html;
-}
-// ─────────────────────────────────────────
-function setLift(lift) {
-  activeLift = lift;
-  renderWorkout();
-}
-
-function renderAll() {
-  renderWorkout();
-  updateTabBadges();
-  checkReassess();
-}
+function renderAll() { renderWorkout(); updateTabBadges(); checkReassess(); }
 
 function renderWorkout() {
   const ls = STATE[activeLift];
   const meta = LIFT_META[activeLift];
 
-  // Tab highlighting
   ['bench','deadlift','squat'].forEach(l => {
-    const tab = document.getElementById('tab' + l.charAt(0).toUpperCase() + l.slice(1));
+    const tab = document.getElementById('tab'+l.charAt(0).toUpperCase()+l.slice(1));
     tab.className = 'lift-tab';
-    if (l === activeLift) tab.classList.add('active-' + l);
+    if (l===activeLift) tab.classList.add('active-'+l);
   });
 
-  document.getElementById('unitToggle').textContent = STATE.unit.toUpperCase();
+  document.getElementById('unitToggle').textContent = unitStr();
 
-  if (ls.current === null) {
-    document.getElementById('setsList').innerHTML =
-      `<div class="empty-state"><span class="empty-state-icon">🎯</span>No position set for this lift.</div>`;
+  if (ls.current===null) {
+    document.getElementById('setsList').innerHTML = `<div class="empty-state"><span class="empty-state-icon">🎯</span>No position set.</div>`;
+    document.getElementById('feedbackPrompt').style.display = 'none';
     return;
   }
 
   const cell = MATRIX[ls.current];
-  const [label, r8, r5, r3, r1, back] = cell;
-  const pct = Math.round((ls.completed.length / MATRIX.length) * 100);
+  const [label,r8,r5,r3,r1,back] = cell;
+  const pct = Math.round(ls.completed.length/MATRIX.length*100);
 
-  // Header
-  document.getElementById('weekNum').textContent = `WEEK ${ls.completed.length + 1}`;
+  document.getElementById('weekNum').textContent = `WEEK ${ls.completed.length+1}`;
   document.getElementById('weekCell').textContent = label;
-  document.getElementById('weekPct').textContent = pct + '%';
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressFill').style.background = meta.color;
+  document.getElementById('weekPct').textContent = pct+'%';
+  document.getElementById('progressFill').style.cssText = `width:${pct}%;background:${meta.color}`;
 
-  // Sets
-  const weights = [r8, r5, r3, r1, r1, r1, back];
-  const reps    = [8,  5,  3,  1,  1,  1,  5 ];
-  const dividers = [false, false, true, false, false, false, true];
+  const weights=[r8,r5,r3,r1,r1,r1,back];
+  const reps=[8,5,3,1,1,1,5];
+  const dividers=[false,false,true,false,false,false,true];
+  const divLabels=[null,null,'power',null,null,null,'backoff'];
 
-  let html = '';
-  weights.forEach((wLbs, i) => {
+  let html='';
+  weights.forEach((wLbs,i) => {
     const pd = getPlates(wLbs);
     const done = ls.setsDone.includes(i);
-    if (dividers[i]) html += `<div class="sets-divider">power</div>`;
-    if (i === 6) html += `<div class="sets-divider">backoff</div>`;
-
-    const perSideStr = pd.perSide > 0
-      ? `${pd.perSide} ${unitStr()} each side`
-      : 'bar only';
-
-    html += `<div class="set-card ${done ? 'completed' : ''}" onclick="toggleSet(${i})">
-      <div class="set-check">${done ? '✓' : ''}</div>
+    if (dividers[i]) html += `<div class="sets-divider">${divLabels[i]}</div>`;
+    html += `<div class="set-card ${done?'completed':''}" onclick="toggleSet(${i})">
+      <div class="set-check">${done?'✓':''}</div>
       <div class="set-info">
-        <div class="set-reps">${reps[i]} ${reps[i] === 1 ? 'rep' : 'reps'}</div>
+        <div class="set-reps">${reps[i]} ${reps[i]===1?'rep':'reps'}</div>
         <div class="set-weight">${pd.display}<span class="set-weight-unit">${unitStr()}</span></div>
       </div>
       <div class="set-side" onclick="event.stopPropagation();showPlatePopup(${wLbs})">
-        <div class="set-side-weight">${pd.perSide > 0 ? pd.perSide : '—'}</div>
-        <div class="set-side-label">${pd.perSide > 0 ? 'per side' : 'bar only'}</div>
+        <div class="set-side-weight">${pd.perSide||'—'}</div>
+        <div class="set-side-label">${pd.perSide?'per side':'bar only'}</div>
         <div class="set-plate-hint">tap for plates</div>
       </div>
     </div>`;
   });
 
   document.getElementById('setsList').innerHTML = html;
-
-  // Show feedback prompt when all sets done
-  const allDone = ls.setsDone.length === 7;
-  document.getElementById('advanceSection').style.display = 'none';
+  const allDone = ls.setsDone.length===7;
   document.getElementById('feedbackPrompt').style.display = allDone ? 'block' : 'none';
 }
 
 function toggleSet(idx) {
   const ls = STATE[activeLift];
   const i = ls.setsDone.indexOf(idx);
-  if (i >= 0) ls.setsDone.splice(i, 1);
-  else ls.setsDone.push(idx);
-  saveState();
-  renderWorkout();
-  updateTabBadges();
-}
-
-function advanceLift() {
-  const ls = STATE[activeLift];
-  if (ls.current === null || ls.current >= MATRIX.length - 1) return;
-  ls.completed.push(ls.current);
-  ls.current++;
-  ls.setsDone = [];
-  saveState();
+  if (i>=0) ls.setsDone.splice(i,1); else ls.setsDone.push(idx);
+  scheduleSave();
   renderWorkout();
   updateTabBadges();
 }
 
 function updateTabBadges() {
   ['bench','deadlift','squat'].forEach(l => {
-    const done = STATE[l].setsDone.length === 7;
-    document.getElementById('check' + l.charAt(0).toUpperCase() + l.slice(1)).textContent = done ? '✓' : '';
+    document.getElementById('check'+l.charAt(0).toUpperCase()+l.slice(1)).textContent = STATE[l].setsDone.length===7 ? '✓' : '';
   });
 }
 
-// ─────────────────────────────────────────
-// REASSESS
-// ─────────────────────────────────────────
 function checkReassess() {
   if (!STATE.setupDate) return;
-  const weeks = Math.floor((Date.now() - STATE.setupDate) / (7 * 24 * 60 * 60 * 1000));
-  const show = weeks >= 4 && !STATE.reassessDismissed;
-  document.getElementById('reassessBanner').style.display = show ? 'block' : 'none';
+  const weeks = Math.floor((Date.now()-STATE.setupDate)/(7*24*60*60*1000));
+  document.getElementById('reassessBanner').style.display = (weeks>=4) ? 'block' : 'none';
 }
 
-// ─────────────────────────────────────────
-// PLATE POPUP
-// ─────────────────────────────────────────
-function showPlatePopup(lbs) {
-  const pd = getPlates(lbs);
-  document.getElementById('popupWeightNum').textContent = `${pd.display} ${unitStr()}`;
-  document.getElementById('popupWeightSub').textContent =
-    `Bar: ${pd.bar} ${unitStr()} · Each side: ${pd.perSide || 0} ${unitStr()}`;
-
-  // Diagram
-  let diag = '';
-  [...pd.plates].reverse().forEach(p => {
-    diag += `<div class="popup-plate-block" style="background:${plateColor(p)};height:${plateHeight(p)}px">${p}</div>`;
-  });
-  diag += `<div class="popup-collar"></div>`;
-  diag += `<div class="popup-bar-center">${pd.bar}</div>`;
-  diag += `<div class="popup-collar"></div>`;
-  pd.plates.forEach(p => {
-    diag += `<div class="popup-plate-block" style="background:${plateColor(p)};height:${plateHeight(p)}px">${p}</div>`;
-  });
-  document.getElementById('popupDiagram').innerHTML = diag;
-
-  // Chips
-  if (pd.plates.length === 0) {
-    document.getElementById('popupChips').innerHTML =
-      `<span style="color:var(--muted);font-size:0.82rem">Bar only</span>`;
-  } else {
-    const counts = {};
-    pd.plates.forEach(p => counts[p] = (counts[p]||0) + 1);
-    document.getElementById('popupChips').innerHTML = Object.entries(counts).map(([p,c]) =>
-      `<div class="popup-chip">
-        <div class="popup-chip-val" style="background:${plateColor(parseFloat(p))}">${c>1?`${c}×`:''}${p}</div>
-        <div class="popup-chip-label">${unitStr()} each</div>
-      </div>`
-    ).join('');
-  }
-
-  document.getElementById('platePopup').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-
-function closePlatePopup() {
-  document.getElementById('platePopup').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-// ─────────────────────────────────────────
-// HISTORY
-// ─────────────────────────────────────────
-function setHistoryLift(lift) {
-  activeHistoryLift = lift;
-  ['bench','deadlift','squat'].forEach(l => {
-    document.getElementById('hTab' + l.charAt(0).toUpperCase() + l.slice(1))
-      .classList.toggle('active', l === lift);
-  });
-  renderHistoryLog();
-}
-
-function renderHistory() {
-  // Stats grid
-  let statsHTML = '';
-  ['bench','deadlift','squat'].forEach(l => {
-    const ls = STATE[l];
-    const meta = LIFT_META[l];
-    const pct = ls.current !== null ? Math.round(ls.completed.length / MATRIX.length * 100) : 0;
-    statsHTML += `<div class="stat-box">
-      <div class="stat-box-label">${meta.label}</div>
-      <div class="stat-box-value" style="color:${meta.color}">${pct}%</div>
-      <div class="stat-box-sub">${ls.completed.length} / ${MATRIX.length} cells</div>
-    </div>`;
-  });
-  document.getElementById('historyStats').innerHTML = statsHTML;
-  renderHistoryLog();
-}
-
-function renderHistoryLog() {
-  const ls = STATE[activeHistoryLift];
-  const log = document.getElementById('historyLog');
-
-  if (ls.completed.length === 0) {
-    log.innerHTML = `<div class="empty-state" style="padding:32px 0">
-      <span class="empty-state-icon">📋</span>No completed cells yet.
-    </div>`;
-    return;
-  }
-
-  log.innerHTML = [...ls.completed].reverse().map((idx, i) => {
-    const cell = MATRIX[idx];
-    const wk = ls.completed.length - i;
-    return `<div class="history-row">
-      <div class="history-row-left">
-        <span class="history-wk">WK ${wk}</span>
-        <span class="history-cell">${cell[0]}</span>
-      </div>
-      <span class="history-1rep">${toDisplay(cell[4])} ${unitStr()} × 1</span>
-    </div>`;
-  }).join('');
-}
-
-// ─────────────────────────────────────────
-// SETTINGS
-// ─────────────────────────────────────────
-function populateSettings() {
-  if (!STATE.maxes) STATE.maxes = {};
-  ['bench','deadlift','squat'].forEach(l => {
-    const el = document.getElementById('settings1rm' + l.charAt(0).toUpperCase() + l.slice(1));
-    if (el) {
-      const saved = STATE.maxes[l];
-      el.value = saved ? saved : '';
-      el.placeholder = saved ? saved : '—';
-    }
-  });
-  ['Lbs','Kg'].forEach(u => {
-    const el = document.getElementById('settingsUnit' + u);
-    if (el) el.classList.toggle('active', u.toLowerCase() === STATE.unit);
-  });
-  populateCellPicker();
-}
-
-function saveSettings() {
-  const toUse = (val) => STATE.unit === 'kg' ? val / 0.453592 : val;
-  if (!STATE.maxes) STATE.maxes = {};
-  ['bench','deadlift','squat'].forEach(l => {
-    const el = document.getElementById('settings1rm' + l.charAt(0).toUpperCase() + l.slice(1));
-    const val = parseInt(el.value);
-    if (val > 0) {
-      STATE.maxes[l] = val; // store in display unit
-      STATE[l].current = findCell(toUse(val));
-      STATE[l].setsDone = [];
-    }
-  });
-  STATE.setupDate = Date.now();
-  STATE.reassessDismissed = false;
-  saveState();
-  showScreen('main');
-  renderAll();
-}
-
+// ── FEEDBACK ──
 function feedbackGood() {
-  // Advance to next cell
-  advanceLift();
+  const ls = STATE[activeLift];
+  if (ls.current===null||ls.current>=MATRIX.length-1) return;
+  ls.completed.push(ls.current);
+  ls.current++;
+  ls.setsDone=[];
+  scheduleSave();
+  renderWorkout();
+  updateTabBadges();
 }
 
 function feedbackRepeat() {
-  // Stay on same cell, reset checkboxes
-  STATE[activeLift].setsDone = [];
-  saveState();
+  STATE[activeLift].setsDone=[];
+  scheduleSave();
   renderWorkout();
   updateTabBadges();
 }
 
 function feedbackHeavy() {
-  // Drop back one cell, keep history
   const ls = STATE[activeLift];
-  if (ls.current !== null && ls.current > 0) {
-    ls.current--;
-    ls.setsDone = [];
-    saveState();
-    renderWorkout();
-    updateTabBadges();
-  }
+  if (ls.current!==null && ls.current>0) { ls.current--; ls.setsDone=[]; scheduleSave(); renderWorkout(); updateTabBadges(); }
 }
 
-function repeatWeek() {
-  if (!confirm('Repeat this cell next week? Sets will be reset but history is unchanged.')) return;
-  STATE[activeLift].setsDone = [];
-  saveState();
-  renderWorkout();
-}
-
-function resetLiftMax(lift) {
-  const meta = LIFT_META[lift];
-  if (!confirm(`Reset ${meta.label} 1RM? You'll enter a new max and the starting cell will be recalculated. History is kept.`)) return;
-  STATE[lift].current = null;
-  STATE[lift].setsDone = [];
-  saveState();
-  // Clear the input field
-  const el = document.getElementById('settings1rm' + lift.charAt(0).toUpperCase() + lift.slice(1));
-  if (el) { el.value = ''; el.placeholder = 'Enter new max'; el.focus(); }
-}
-
-function resetOnlyMaxes() {
-  if (!confirm('Clear 1-rep maxes and return to setup? Your history and cell positions are kept.')) return;
-  STATE.setup = false;
-  STATE.setupDate = null;
-  saveState();
-  document.getElementById('mainScreen').classList.remove('active');
-  document.getElementById('bottomNav').style.display = 'none';
-  document.getElementById('setupScreen').classList.add('active');
-  // Clear setup inputs
-  ['Bench','Deadlift','Squat'].forEach(l => {
-    document.getElementById('setup' + l).value = '';
+// ── MATRIX VIEW ──
+function renderMatrix() {
+  ['Lbs','Kg'].forEach(u => {
+    const el = document.getElementById('matrixUnit'+u);
+    if (el) el.classList.toggle('active', u.toLowerCase()===STATE.unit);
   });
-  document.getElementById('setupBtn').disabled = true;
+
+  const rowStarts=[100,170,240,310,380,450,520,590,660];
+  const grid=document.getElementById('matrixGrid');
+  let html='', rowIdx=-1;
+
+  MATRIX.forEach((cell,idx) => {
+    const [label,r8,r5,r3,r1,back]=cell;
+    const base=parseInt(label);
+    const newRow=rowStarts.findIndex(rs=>base>=rs&&base<rs+70);
+    if (newRow>rowIdx) {
+      rowIdx=newRow;
+      html+=`<div style="grid-column:1/-1;font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;padding:6px 0 2px;border-bottom:1px solid var(--border);margin-bottom:2px">Row ${rowIdx+1}</div>`;
+    }
+
+    const badges=['bench','deadlift','squat'].filter(l=>STATE[l].current===idx);
+    let cls='m-cell';
+    if (badges.includes('bench')) cls+=' cur-bench';
+    else if (badges.includes('deadlift')) cls+=' cur-deadlift';
+    else if (badges.includes('squat')) cls+=' cur-squat';
+
+    const bColors={bench:'var(--bench)',deadlift:'var(--deadlift)',squat:'var(--squat)'};
+    const bLabels={bench:'B',deadlift:'D',squat:'S'};
+    const badgeHTML=badges.map(l=>`<span class="m-badge" style="background:${bColors[l]}">${bLabels[l]}</span>`).join('');
+
+    const cellLabel = STATE.unit==='kg'
+      ? `${toDisplay(parseInt(label))}–${toDisplay(parseInt(label.split('-')[1]))}`
+      : label;
+
+    const ws=[r8,r5,r3,r1,back], rs=[8,5,3,1,5];
+    const colors=['#6db88a','#6db88a','#d48080','var(--accent)','var(--accent2)'];
+    const divs=[false,false,true,false,true];
+    let rows='';
+    ws.forEach((w,i)=>{
+      const pd=getPlates(w);
+      if(divs[i]) rows+=`<div class="m-div"></div>`;
+      rows+=`<div class="m-row"><span class="m-reps">${rs[i]}×</span><span class="m-weight" style="color:${colors[i]}" onclick="event.stopPropagation();showPlatePopup(${w})">${pd.display}</span></div>`;
+    });
+
+    html+=`<div class="${cls}"><div class="m-cell-header"><span>${cellLabel}</span><div style="display:flex;gap:3px">${badgeHTML}</div></div>${rows}</div>`;
+  });
+
+  grid.innerHTML=html;
 }
 
-function populateCellPicker() {
-  const container = document.getElementById('cellPickerRows');
-  const lifts = [
-    { key: 'bench',    label: 'Bench',    color: 'var(--bench)' },
-    { key: 'deadlift', label: 'Deadlift', color: 'var(--deadlift)' },
-    { key: 'squat',    label: 'Squat',    color: 'var(--squat)' },
-  ];
+// ── HISTORY ──
+function setHistoryLift(lift) {
+  activeHistoryLift=lift;
+  ['bench','deadlift','squat'].forEach(l=>{
+    document.getElementById('hTab'+l.charAt(0).toUpperCase()+l.slice(1)).classList.toggle('active',l===lift);
+  });
+  renderHistoryLog();
+}
 
-  container.innerHTML = lifts.map(l => {
-    const cur = STATE[l.key].current;
-    const options = MATRIX.map((cell, i) =>
-      `<option value="${i}" ${i === cur ? 'selected' : ''}>${cell[0]}</option>`
-    ).join('');
-    return `<div class="cell-picker-row">
-      <span class="cell-picker-label">
-        <span style="width:8px;height:8px;border-radius:50%;background:${l.color};display:inline-block;flex-shrink:0"></span>
-        ${l.label}
-      </span>
-      <select class="cell-picker-select" id="cellPick_${l.key}">${options}</select>
-    </div>`;
+function renderHistory() {
+  let statsHTML='';
+  ['bench','deadlift','squat'].forEach(l=>{
+    const ls=STATE[l]; const meta=LIFT_META[l];
+    const pct=ls.current!==null?Math.round(ls.completed.length/MATRIX.length*100):0;
+    statsHTML+=`<div class="stat-box"><div class="stat-box-label">${meta.label}</div><div class="stat-box-value" style="color:${meta.color}">${pct}%</div><div class="stat-box-sub">${ls.completed.length}/${MATRIX.length} cells</div></div>`;
+  });
+  document.getElementById('historyStats').innerHTML=statsHTML;
+  renderHistoryLog();
+}
+
+function renderHistoryLog() {
+  const ls=STATE[activeHistoryLift];
+  const log=document.getElementById('historyLog');
+  if (ls.completed.length===0) { log.innerHTML=`<div class="empty-state"><span class="empty-state-icon">📋</span>No completed cells yet.</div>`; return; }
+  log.innerHTML=[...ls.completed].reverse().map((idx,i)=>{
+    const cell=MATRIX[idx]; const wk=ls.completed.length-i;
+    return `<div class="history-row"><div style="display:flex;gap:12px;align-items:center"><span class="history-wk">WK ${wk}</span><span class="history-cell">${cell[0]}</span></div><span class="history-1rep">${toDisplay(cell[4])} ${unitStr()} ×1</span></div>`;
   }).join('');
 }
 
-function saveCell() {
-  ['bench','deadlift','squat'].forEach(l => {
-    const sel = document.getElementById('cellPick_' + l);
-    if (sel) {
-      STATE[l].current = parseInt(sel.value);
-      STATE[l].setsDone = [];
-    }
+// ── SETTINGS ──
+function populateSettings() {
+  if (!STATE.maxes) STATE.maxes={};
+  ['bench','deadlift','squat'].forEach(l=>{
+    const el=document.getElementById('settings1rm'+l.charAt(0).toUpperCase()+l.slice(1));
+    if (el) { const saved=STATE.maxes[l]; el.value=saved||''; el.placeholder=saved||'—'; }
   });
-  saveState();
+  ['Lbs','Kg'].forEach(u=>{
+    const el=document.getElementById('settingsUnit'+u);
+    if (el) el.classList.toggle('active',u.toLowerCase()===STATE.unit);
+  });
+  populateCellPicker();
+}
+
+function populateCellPicker() {
+  const container=document.getElementById('cellPickerRows');
+  const lifts=[{key:'bench',label:'Bench',color:'var(--bench)'},{key:'deadlift',label:'Deadlift',color:'var(--deadlift)'},{key:'squat',label:'Squat',color:'var(--squat)'}];
+  container.innerHTML=lifts.map(l=>{
+    const cur=STATE[l.key].current;
+    const options=MATRIX.map((cell,i)=>`<option value="${i}" ${i===cur?'selected':''}>${cell[0]}</option>`).join('');
+    return `<div class="cell-picker-row"><span class="cell-picker-label"><span style="width:8px;height:8px;border-radius:50%;background:${l.color};display:inline-block;flex-shrink:0"></span>${l.label}</span><select class="cell-picker-select" id="cellPick_${l.key}">${options}</select></div>`;
+  }).join('');
+}
+
+async function saveSettings() {
+  const toUse = v => STATE.unit==='kg' ? v/0.453592 : v;
+  if (!STATE.maxes) STATE.maxes={};
+  ['bench','deadlift','squat'].forEach(l=>{
+    const el=document.getElementById('settings1rm'+l.charAt(0).toUpperCase()+l.slice(1));
+    const val=parseInt(el.value);
+    if (val>0) { STATE.maxes[l]=val; STATE[l].current=findCell(toUse(val)); STATE[l].setsDone=[]; }
+  });
+  STATE.setupDate=Date.now();
+  await saveToSupabase();
   showScreen('main');
   renderAll();
 }
 
-function resetAll() {
-  localStorage.removeItem('pm_v4');
-  location.reload();
+async function saveCell() {
+  ['bench','deadlift','squat'].forEach(l=>{
+    const sel=document.getElementById('cellPick_'+l);
+    if (sel) { STATE[l].current=parseInt(sel.value); STATE[l].setsDone=[]; }
+  });
+  await saveToSupabase();
+  showScreen('main');
+  renderAll();
 }
-// ─────────────────────────────────────────
+
+function resetLiftMax(lift) {
+  const meta=LIFT_META[lift];
+  if (!confirm(`Reset ${meta.label} 1RM? History is kept.`)) return;
+  STATE[lift].current=null; STATE[lift].setsDone=[];
+  scheduleSave();
+  const el=document.getElementById('settings1rm'+lift.charAt(0).toUpperCase()+lift.slice(1));
+  if (el) { el.value=''; el.placeholder='Enter new max'; el.focus(); }
+}
+
+async function resetAll() {
+  STATE={ unit:STATE.unit, setupDate:null, maxes:{}, bench:{current:null,completed:[],setsDone:[]}, deadlift:{current:null,completed:[],setsDone:[]}, squat:{current:null,completed:[],setsDone:[]} };
+  await saveToSupabase();
+  document.getElementById('mainScreen').classList.remove('active');
+  document.getElementById('bottomNav').style.display='none';
+  document.getElementById('setupScreen').classList.add('active');
+}
+
+// ── PLATE POPUP ──
+function showPlatePopup(lbs) {
+  const pd=getPlates(lbs);
+  document.getElementById('popupWeightNum').textContent=`${pd.display} ${unitStr()}`;
+  document.getElementById('popupWeightSub').textContent=`Bar: ${pd.bar} ${unitStr()} · Each side: ${pd.perSide||0} ${unitStr()}`;
+  let diag='';
+  [...pd.plates].reverse().forEach(p=>{ diag+=`<div class="popup-plate-block" style="background:${plateColor(p)};height:${plateHeight(p)}px">${p}</div>`; });
+  diag+=`<div class="popup-collar"></div><div class="popup-bar-center">${pd.bar}</div><div class="popup-collar"></div>`;
+  pd.plates.forEach(p=>{ diag+=`<div class="popup-plate-block" style="background:${plateColor(p)};height:${plateHeight(p)}px">${p}</div>`; });
+  document.getElementById('popupDiagram').innerHTML=diag;
+  const counts={};
+  pd.plates.forEach(p=>counts[p]=(counts[p]||0)+1);
+  document.getElementById('popupChips').innerHTML=pd.plates.length===0
+    ? `<span style="color:var(--muted)">Bar only</span>`
+    : Object.entries(counts).map(([p,c])=>`<div class="popup-chip"><div class="popup-chip-val" style="background:${plateColor(parseFloat(p))}">${c>1?`${c}×`:''}${p}</div><div class="popup-chip-label">${unitStr()} each</div></div>`).join('');
+  document.getElementById('platePopup').style.display='flex';
+  document.body.style.overflow='hidden';
+}
+
+function closePlatePopup() {
+  document.getElementById('platePopup').style.display='none';
+  document.body.style.overflow='';
+}
+
+// ── EXPORT ──
 function exportProgress() {
-  const now = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
-  const lines = [`POWER MATRIX — PROGRESS EXPORT`, `Generated: ${now}`, `Units: ${unitStr()}`, ''];
-  ['bench','deadlift','squat'].forEach(l => {
-    const ls = STATE[l];
-    const meta = LIFT_META[l];
+  const now=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const lines=[`POWER MATRIX — PROGRESS EXPORT`,`Generated: ${now}`,`Units: ${unitStr()}`,''];
+  ['bench','deadlift','squat'].forEach(l=>{
+    const ls=STATE[l]; const meta=LIFT_META[l];
     lines.push(`── ${meta.label.toUpperCase()} ──`);
-    if (ls.current === null) { lines.push('  Not started'); }
+    if (ls.current===null) { lines.push('  Not started'); }
     else {
-      const cur = MATRIX[ls.current];
+      const cur=MATRIX[ls.current];
       lines.push(`  Current cell: ${cur[0]}`);
       lines.push(`  1-rep target: ${toDisplay(cur[4])} ${unitStr()}`);
-      lines.push(`  Cells done:   ${ls.completed.length} / ${MATRIX.length}`);
-      if (ls.completed.length > 0) {
-        lines.push('  History:');
-        ls.completed.forEach((idx, i) =>
-          lines.push(`    Week ${i+1}: ${MATRIX[idx][0]} — ${toDisplay(MATRIX[idx][4])} ${unitStr()}`)
-        );
-      }
+      lines.push(`  Cells done: ${ls.completed.length}/${MATRIX.length}`);
+      ls.completed.forEach((idx,i)=>lines.push(`    Week ${i+1}: ${MATRIX[idx][0]} — ${toDisplay(MATRIX[idx][4])} ${unitStr()}`));
     }
     lines.push('');
   });
-
-  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `power-matrix-${new Date().toISOString().slice(0,10)}.txt`;
-  a.click();
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`power-matrix-${new Date().toISOString().slice(0,10)}.txt`; a.click();
   URL.revokeObjectURL(url);
 }
 
-// ─────────────────────────────────────────
-// INIT
-// ─────────────────────────────────────────
-loadState();
-
-if (STATE.setup) {
-  document.getElementById('setupScreen').classList.remove('active');
-  document.getElementById('mainScreen').classList.add('active');
-  document.getElementById('bottomNav').style.display = 'flex';
-  renderAll();
-} else {
-  // Pre-set unit buttons on setup screen
-  setUnit(STATE.unit || 'lbs');
-}
+// ── INIT ──
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    await loadFromSupabase();
+  }
+})();
 </script>
 </body>
 </html>
