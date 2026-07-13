@@ -888,7 +888,7 @@ function renderMatrix() {
       rows+=`<div class="m-row"><span class="m-reps">${rs[i]}×</span><span class="m-weight" style="color:${colors[i]}" onclick="event.stopPropagation();showPlatePopup(${w})">${pd.display}</span></div>`;
     });
 
-    const oneRM = toDisplay(snapWeight(r1));
+    const oneRM = toDisplay(r1);
     html+=`<div class="${cls}"><div class="m-cell-header"><span>${cellLabel}</span><div style="display:flex;gap:3px">${badgeHTML}</div></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #222"><span style="font-size:0.56rem;color:var(--muted);letter-spacing:0.06em">1RM</span><span style="font-size:0.95rem;font-weight:800;color:var(--accent)">${oneRM}<span style="font-size:0.55rem;font-weight:400;color:var(--muted);margin-left:2px">${unitStr()}</span></span></div>${rows}</div>`;
   });
 
