@@ -6,7 +6,24 @@ on:
       - main
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Inline JS syntax check
+        run: |
+          cat > /tmp/inline_check.js <<'EOF'
+          const fs=require('fs'),vm=require('vm');let bad=0;
+          for(const f of process.argv.slice(2)){const h=fs.readFileSync(f,'utf8');const re=/<script\b([^>]*)>([\s\S]*?)<\/script>/gi;let m,i=0;
+          while((m=re.exec(h))){const a=m[1];if(/\bsrc=/.test(a)||/type=["'](?!text\/javascript)[^"']*["']/.test(a))continue;i++;
+          try{new vm.Script(m[2],{filename:`${f}#script${i}`})}catch(e){bad=1;console.log(`FAIL ${f} script ${i}: ${e.message}`)}}
+          console.log(`${f}: ${i} inline script(s) checked`)}process.exit(bad)
+          EOF
+          node /tmp/inline_check.js index.html
+
   deploy:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
